@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PieChart from './PieChart';
+import LineChart from './LineChart';
 
 const WebMonitoringApp = ({ user }) => {
     const [dashboardData, setDashboardData] = useState({
@@ -82,32 +83,39 @@ const WebMonitoringApp = ({ user }) => {
             case 'dashboard':
                 return (
                     <div>
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            {[
-                                { label: 'Total Items', value: dashboardData.items, color: 'bg-blue-500', icon: '📦' },
-                                { label: 'Dataset 2', value: dashboardData.dataset2, color: 'bg-blue-400', icon: '📋' },
-                                { label: 'Gudang', value: dashboardData.gudang, color: 'bg-blue-600', icon: '🏢' },
-                                { label: 'Site', value: dashboardData.site, color: 'bg-blue-700', icon: '🏛️' }
-                            ].map((stat, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-6">
+                        {/* Layout baru: Gudang-Site (kiri) dan Login Statistics (kanan) */}
+                        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                            {/* Kolom Kiri: Gudang dan Site (atas-bawah) */}
+                            <div className="flex flex-col gap-4">
+                                {/* Box Gudang */}
+                                <div className="bg-white rounded-lg shadow-md p-6 w-72">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-gray-600 text-sm">{stat.label}</p>
-                                            <p className="text-3xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                                            <p className="text-gray-600 text-sm">Gudang</p>
+                                            <p className="text-3xl font-bold text-gray-900">{dashboardData.gudang.toLocaleString()}</p>
                                         </div>
-                                        <div className={`${stat.color} text-white p-3 rounded-full`}>
-                                            <span className="text-2xl">{stat.icon}</span>
+                                        <div className="bg-blue-600 text-white p-3 rounded-full">
+                                            <span className="text-2xl">🏢</span>
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                                
+                                {/* Box Site */}
+                                <div className="bg-white rounded-lg shadow-md p-6 w-72">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-gray-600 text-sm">Site</p>
+                                            <p className="text-3xl font-bold text-gray-900">{dashboardData.site.toLocaleString()}</p>
+                                        </div>
+                                        <div className="bg-blue-700 text-white p-3 rounded-full">
+                                            <span className="text-2xl">🏛️</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        {/* Statistics Row - Login Stats & Transaction Status */}
-                        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* Login Stats - Combined Container */}
-                            <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+                            {/* Kolom Kanan: Login Statistics */}
+                            <div className="flex-1 bg-white rounded-lg shadow-md p-6">
                                 <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
                                     <span className="text-xl mr-2">📊</span>
                                     Login Statistics
@@ -129,14 +137,22 @@ const WebMonitoringApp = ({ user }) => {
                                     ))}
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Transaction Status Pie Chart - Compact */}
-                            <div className="flex-shrink-0 flex items-center">
+                        {/* Charts Row - Transaction Status Chart & Daily Login Chart */}
+                        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+                            {/* Transaction Status Chart */}
+                            <div className="flex-1">
                                 <PieChart 
                                     data={transactionStatusData} 
                                     title="📈 Status Transaksi"
-                                    compact={true}
+                                    compact={false}
                                 />
+                            </div>
+
+                            {/* Daily Login Chart */}
+                            <div className="flex-1">
+                                <LineChart title="📈 Grafik Login Harian (30 Hari Terakhir)" />
                             </div>
                         </div>
 

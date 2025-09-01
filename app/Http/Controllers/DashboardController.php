@@ -268,4 +268,38 @@ class DashboardController extends Controller
             ], 500);
         }
     }
+
+    public function getDailyLoginChart()
+    {
+        try {
+            // Ambil data login untuk 30 hari terakhir
+            $dailyLogins = LoginLog::select(
+                    DB::raw('DATE(login_time) as date'),
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(CASE WHEN status = "success" THEN 1 ELSE 0 END) as successful'),
+                    DB::raw('SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed')
+                )
+                ->where('login_time', '>=', now()->subDays(30))
+                ->groupBy(DB::raw('DATE(login_time)'))
+                ->orderBy('date', 'asc')
+                ->get();
+
+            // Format data untuk chart
+            $chartData = $dailyLogins->map(function($item) {
+                return [
+                    'date' => $item->date,
+                    'total' => $item->total,
+                    'successful' => $item->successful,
+                    'failed' => $item->failed
+                ];
+            });
+
+            return response()->json($chartData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching daily login data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

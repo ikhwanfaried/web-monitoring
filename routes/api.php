@@ -18,3 +18,4 @@ Route::get('/site', [DashboardController::class, 'getSite']);
 Route::get('/login-logs', [DashboardController::class, 'getLoginLogs']);
 Route::get('/login-stats', [DashboardController::class, 'getLoginStats']);
 Route::get('/transaction-status-chart', [DashboardController::class, 'getTransactionStatusChart']);
+Route::get('/daily-login-chart', [DashboardController::class, 'getDailyLoginChart']);
