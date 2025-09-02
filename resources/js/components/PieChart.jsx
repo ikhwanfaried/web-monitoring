@@ -177,14 +177,16 @@ const PieChart = ({ data, title, compact = false }) => {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="bg-white rounded-lg shadow-md p-6">
       {title && (
         <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
           {title}
         </h3>
       )}
-      <div className="w-full h-full">
-        <Pie data={chartData} options={options} />
+      <div className="h-80 w-full flex justify-center items-center">
+        <div className="h-full w-full max-w-sm">
+          <Pie data={chartData} options={options} />
+        </div>
       </div>
     </div>
   );

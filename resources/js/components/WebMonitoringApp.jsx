@@ -229,15 +229,14 @@ const WebMonitoringApp = ({ user }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-800 flex">
-            {/* Collapsible Sidebar */}
-            <aside className="group w-16 hover:w-80 bg-cyan-900/90 backdrop-blur border-r border-cyan-500 text-white flex flex-col transition-all duration-300 ease-in-out">
+        <div className="min-h-screen bg-slate-800">
+            {/* Fixed Collapsible Sidebar */}
+            <aside className="group fixed left-0 top-0 h-screen w-16 hover:w-80 bg-cyan-900/90 backdrop-blur border-r border-cyan-500 text-white flex flex-col transition-all duration-300 ease-in-out z-50">
                 <div className="p-4 group-hover:p-6">
                     <div className="flex items-center">
                         <h1 className="text-2xl font-bold text-cyan-400 group-hover:text-3xl transition-all duration-300">S</h1>
                         <span className="ml-2 text-xl font-bold text-cyan-400 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">IMTELOG</span>
                     </div>
-                    <p className="text-cyan-300 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-200">Dashboard Monitoring Data Inventaris</p>
                 </div>
                 
                 {/* Menu Navigation */}
@@ -293,8 +292,8 @@ const WebMonitoringApp = ({ user }) => {
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col">
+            {/* Main Content Area - dengan margin left untuk memberikan ruang sidebar */}
+            <div className="ml-16 min-h-screen flex flex-col">
                 {/* Main Content */}
                 <main className="flex-1 px-8 py-8">
                     {renderContent()}
