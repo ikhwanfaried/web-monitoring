@@ -19,3 +19,5 @@ Route::get('/login-logs', [DashboardController::class, 'getLoginLogs']);
 Route::get('/login-stats', [DashboardController::class, 'getLoginStats']);
 Route::get('/transaction-status-chart', [DashboardController::class, 'getTransactionStatusChart']);
 Route::get('/daily-login-chart', [DashboardController::class, 'getDailyLoginChart']);
+Route::get('/gudang-list', [DashboardController::class, 'getGudangList']);
+Route::get('/stock-chart', [DashboardController::class, 'getStockChart']);

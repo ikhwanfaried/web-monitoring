@@ -140,21 +140,45 @@ class DashboardController extends Controller
     {
         try {
             $page = $request->get('page', 1);
-            $perPage = 15;
+            $perPage = $request->get('per_page', 100); // Tingkatkan dari 15 ke 100
+            $filter = $request->get('filter', 'all');
             
-            $items = DB::table('gudang')
+            $query = DB::table('dataset2')
+                ->select(
+                    'id',
+                    'Item ID as item_id',
+                    'Part Number as part_number',
+                    'Nama Barang as nama_barang',
+                    'Jumlah as jumlah',
+                    'Gudang as gudang',
+                    'Rak as rak',
+                    'Satuan as satuan'
+                );
+            
+            // Terapkan filter jika bukan 'all'
+            if ($filter && $filter !== 'all') {
+                $query->where('Gudang', $filter);
+            }
+            
+            $items = $query
                 ->skip(($page - 1) * $perPage)
                 ->take($perPage)
                 ->get();
-                
-            $total = DB::table('gudang')->count();
+            
+            // Hitung total dengan filter yang sama
+            $totalQuery = DB::table('dataset2');
+            if ($filter && $filter !== 'all') {
+                $totalQuery->where('Gudang', $filter);
+            }
+            $total = $totalQuery->count();
             $lastPage = ceil($total / $perPage);
 
             return response()->json([
                 'data' => $items,
                 'current_page' => $page,
                 'last_page' => $lastPage,
-                'total' => $total
+                'total' => $total,
+                'filter' => $filter
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -298,6 +322,77 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error fetching daily login data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getGudangList()
+    {
+        try {
+            // Ambil daftar gudang unik dari dataset2
+            $gudangList = DB::table('dataset2')
+                ->select('Gudang')
+                ->distinct()
+                ->whereNotNull('Gudang')
+                ->where('Gudang', '!=', '')
+                ->orderBy('Gudang')
+                ->get();
+
+            return response()->json([
+                'data' => $gudangList
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching gudang list',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getStockChart(Request $request)
+    {
+        try {
+            $filter = $request->get('filter', 'all');
+            
+            $query = DB::table('dataset2')
+                ->select('jumlah')
+                ->whereNotNull('jumlah');
+                
+            // Terapkan filter jika bukan 'all'
+            if ($filter && $filter !== 'all') {
+                $query->where('Gudang', $filter);
+            }
+            
+            $stockData = $query->get();
+            
+            // Kategorikan stock
+            $stockHabis = 0;
+            $stockMenupis = 0;
+            $stockSiapPakai = 0;
+            
+            foreach ($stockData as $item) {
+                $jumlah = (int) $item->jumlah;
+                
+                if ($jumlah == 0) {
+                    $stockHabis++;
+                } elseif ($jumlah > 0 && $jumlah <= 10) {
+                    $stockMenupis++;
+                } else {
+                    $stockSiapPakai++;
+                }
+            }
+            
+            $chartData = [
+                ['name' => 'Stock Habis', 'value' => $stockHabis],
+                ['name' => 'Stock Menipis', 'value' => $stockMenupis],
+                ['name' => 'Siap Pakai', 'value' => $stockSiapPakai]
+            ];
+
+            return response()->json($chartData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching stock chart data',
                 'message' => $e->getMessage()
             ], 500);
         }

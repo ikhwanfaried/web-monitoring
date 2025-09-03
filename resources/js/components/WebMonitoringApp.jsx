@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PieChart from './PieChart';
 import LineChart from './LineChart';
+import StockPieChart from './StockPieChart';
 
 const WebMonitoringApp = ({ user }) => {
     const [dashboardData, setDashboardData] = useState({
@@ -20,6 +21,11 @@ const WebMonitoringApp = ({ user }) => {
 
     const [transactionStatusData, setTransactionStatusData] = useState([]);
     const [activeTab, setActiveTab] = useState('dashboard');
+    
+    // State untuk gudang
+    const [gudangList, setGudangList] = useState([]);
+    const [selectedGudang, setSelectedGudang] = useState('all');
+    const [gudangData, setGudangData] = useState([]);
 
     // Simple tab change function
     const changeTab = (tabName) => {
@@ -36,7 +42,15 @@ const WebMonitoringApp = ({ user }) => {
         fetchLoginLogs();
         fetchLoginStats();
         fetchTransactionStatusData();
+        fetchGudangList();
     }, []);
+
+    useEffect(() => {
+        // Fetch gudang data ketika selectedGudang berubah
+        if (activeTab === 'gudang') {
+            fetchGudangData();
+        }
+    }, [selectedGudang, activeTab]);
 
     const fetchDashboardData = async () => {
         try {
@@ -75,6 +89,29 @@ const WebMonitoringApp = ({ user }) => {
             setTransactionStatusData(data);
         } catch (error) {
             console.error('Error fetching transaction status data:', error);
+        }
+    };
+
+    const fetchGudangList = async () => {
+        try {
+            const response = await fetch('/api/gudang-list');
+            const data = await response.json();
+            setGudangList(data.data || []);
+        } catch (error) {
+            console.error('Error fetching gudang list:', error);
+        }
+    };
+
+    const fetchGudangData = async () => {
+        try {
+            const url = selectedGudang === 'all' 
+                ? '/api/gudang?per_page=100'
+                : `/api/gudang?filter=${selectedGudang}&per_page=100`;
+            const response = await fetch(url);
+            const data = await response.json();
+            setGudangData(data.data || []);
+        } catch (error) {
+            console.error('Error fetching gudang data:', error);
         }
     };
 
@@ -156,60 +193,191 @@ const WebMonitoringApp = ({ user }) => {
                             </div>
                         </div>
 
-                        {/* Login Logs Table */}
+                        {/* Login Logs Table - Scrollable */}
                         <div className="bg-white rounded-lg shadow-md p-6">
                             <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Login Activity</h3>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full table-auto">
-                                    <thead>
-                                        <tr className="bg-gray-50">
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Username</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Status</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">IP Address</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Login Time</th>
-                                            <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">User Agent</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loginLogs.map((log, index) => (
-                                            <tr key={index} className="border-t border-gray-200">
-                                                <td className="px-4 py-2 text-sm text-gray-900">{log.username}</td>
-                                                <td className="px-4 py-2 text-sm">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        log.status === 'success' 
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                        {log.status === 'success' ? '✅ Success' : '❌ Failed'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-2 text-sm text-gray-600">{log.ip_address}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-600">
-                                                    {new Date(log.login_time).toLocaleString('id-ID')}
-                                                </td>
-                                                <td className="px-4 py-2 text-sm text-gray-600 max-w-xs truncate" title={log.user_agent}>
-                                                    {log.user_agent}
-                                                </td>
+                                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                                    <table className="min-w-full table-auto">
+                                        <thead className="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">IP Address</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Login Time</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User Agent</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                {loginLogs.length === 0 && (
-                                    <div className="text-center py-8 text-gray-500">
-                                        Tidak ada data login logs
-                                    </div>
-                                )}
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {loginLogs.map((log, index) => (
+                                                <tr key={index} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{log.username}</td>
+                                                    <td className="px-4 py-3 text-sm">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            log.status === 'success' 
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {log.status === 'success' ? '✅ Success' : '❌ Failed'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600 font-mono">{log.ip_address}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">
+                                                        {new Date(log.login_time).toLocaleString('id-ID')}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={log.user_agent}>
+                                                        {log.user_agent}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {loginLogs.length === 0 && (
+                                        <div className="text-center py-8 text-gray-500">
+                                            Tidak ada data login logs
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-2 text-sm text-gray-500 text-center">
+                                    {loginLogs.length > 0 && `Menampilkan ${loginLogs.length} aktivitas login terbaru`}
+                                </div>
                             </div>
                         </div>
                     </div>
                 );
             case 'gudang':
                 return (
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Data Gudang</h2>
-                        <p className="text-gray-600">Halaman untuk mengelola data gudang akan ditampilkan di sini.</p>
-                        <div className="mt-4 p-4 bg-cyan-50 rounded border border-cyan-200">
-                            <p className="text-cyan-800">Total Gudang: {dashboardData.gudang.toLocaleString()}</p>
+                    <div>
+                        {/* Header dengan Dropdown */}
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Data Gudang</h2>
+                                    <p className="text-gray-600">Kelola dan pantau data gudang inventaris</p>
+                                </div>
+                                
+                                {/* Dropdown Pilihan Gudang */}
+                                <div className="mt-4 md:mt-0">
+                                    <label htmlFor="gudang-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Filter Gudang:
+                                    </label>
+                                    <select
+                                        id="gudang-select"
+                                        value={selectedGudang}
+                                        onChange={(e) => setSelectedGudang(e.target.value)}
+                                        className="block w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="all">🏢 Semua Gudang</option>
+                                        {gudangList.map((gudang, index) => (
+                                            <option key={index} value={gudang.Gudang}>
+                                                📦 {gudang.Gudang}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Info Summary */}
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 mb-6 border border-blue-200">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-blue-800 font-semibold">
+                                        {selectedGudang === 'all' 
+                                            ? `Total Semua Gudang: ${dashboardData.gudang.toLocaleString()}` 
+                                            : `Data untuk: ${selectedGudang}`
+                                        }
+                                    </p>
+                                    <p className="text-blue-600 text-sm">
+                                        {gudangData.length > 0 
+                                            ? `Menampilkan ${gudangData.length} item` 
+                                            : 'Belum ada data'
+                                        }
+                                    </p>
+                                </div>
+                                <div className="text-blue-600">
+                                    <span className="text-2xl">🏢</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tabel Data Barang di Gudang */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">Data Barang di Gudang</h3>
+                            
+                            {gudangData.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                                        <table className="min-w-full table-auto">
+                                            <thead className="bg-gray-50 sticky top-0">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Item ID</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Part Number</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nama Barang</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Gudang</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Rak</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Jumlah</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Satuan</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Harga</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {gudangData.map((item, index) => (
+                                                    <tr key={index} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.item_id}</td>
+                                                        <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{item.part_number}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-900 font-medium" title={item.nama_barang}>
+                                                            <div className="max-w-48 truncate">{item.nama_barang}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                🏢 {item.gudang}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">{item.rak || '-'}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold text-right">
+                                                            {item.jumlah || '0'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">{item.satuan || '-'}</td>
+                                                        <td className="px-4 py-3 text-sm text-gray-900 text-right">-</td>
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                                ✅ ACTIVE
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
+                                        <span>Total data: {gudangData.length} item</span>
+                                        <span className="text-blue-600">
+                                            📊 Total Stok: {gudangData.reduce((sum, item) => sum + (parseInt(item.jumlah) || 0), 0).toLocaleString()} unit
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-gray-500">
+                                    <span className="text-4xl mb-4 block">📭</span>
+                                    <p className="text-lg font-medium">Belum ada data barang</p>
+                                    <p className="text-sm">
+                                        {selectedGudang === 'all' 
+                                            ? 'Tidak ada data barang tersedia'
+                                            : `Tidak ada data barang untuk gudang: ${selectedGudang}`
+                                        }
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Stock Chart - Grafik Pie Chart Stock */}
+                        <div className="mt-8">
+                            <StockPieChart 
+                                selectedGudang={selectedGudang} 
+                                title="📊 Distribusi Stock Barang"
+                            />
                         </div>
                     </div>
                 );
