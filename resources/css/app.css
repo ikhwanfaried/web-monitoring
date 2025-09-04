@@ -9,3 +9,49 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Custom CSS untuk Table Detail Stock */
+.stock-detail-modal {
+    max-width: 800px !important;
+    max-height: 500px !important;
+    width: 90vw !important;
+}
+
+.stock-detail-table {
+    font-size: 11px !important;
+}
+
+.stock-detail-table th {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+}
+
+.stock-detail-table td {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+}
+
+.stock-detail-table tbody tr {
+    height: 28px !important;
+}
+
+/* Kompakt search dan pagination */
+.stock-modal-controls {
+    padding: 8px 0 !important;
+    font-size: 12px !important;
+}
+
+.stock-modal-controls input,
+.stock-modal-controls select {
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    height: 32px !important;
+}
+
+.stock-modal-controls button {
+    padding: 4px 12px !important;
+    font-size: 11px !important;
+    height: 32px !important;
+}

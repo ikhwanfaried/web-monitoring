@@ -4,7 +4,11 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "build-dev": "vite build --mode development",
+        "build-and-serve": "vite build && php artisan serve",
+        "production": "vite build",
+        "watch": "vite build --watch"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

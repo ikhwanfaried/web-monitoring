@@ -140,7 +140,7 @@ class DashboardController extends Controller
     {
         try {
             $page = $request->get('page', 1);
-            $perPage = $request->get('per_page', 100); // Tingkatkan dari 15 ke 100
+            $perPage = $request->get('per_page', 25);
             $filter = $request->get('filter', 'all');
             
             $query = DB::table('dataset2')
@@ -158,6 +158,12 @@ class DashboardController extends Controller
             // Terapkan filter jika bukan 'all'
             if ($filter && $filter !== 'all') {
                 $query->where('Gudang', $filter);
+            }
+            
+            // Batasi per_page maksimum untuk performa server
+            $maxPerPage = 100;
+            if ($perPage > $maxPerPage) {
+                $perPage = $maxPerPage;
             }
             
             $items = $query
@@ -356,7 +362,7 @@ class DashboardController extends Controller
             $filter = $request->get('filter', 'all');
             
             $query = DB::table('dataset2')
-                ->select('jumlah')
+                ->select('Part Number as part_number', 'Nama Barang as nama_barang', 'jumlah', 'Gudang as gudang')
                 ->whereNotNull('jumlah');
                 
             // Terapkan filter jika bukan 'all'
@@ -366,30 +372,49 @@ class DashboardController extends Controller
             
             $stockData = $query->get();
             
-            // Kategorikan stock
-            $stockHabis = 0;
-            $stockMenupis = 0;
-            $stockSiapPakai = 0;
+            // Kategorikan stock dengan detail items
+            $stockHabis = [];
+            $stockMenupis = [];
+            $stockSiapPakai = [];
             
             foreach ($stockData as $item) {
                 $jumlah = (int) $item->jumlah;
                 
+                $itemDetail = [
+                    'part_number' => $item->part_number,
+                    'nama_barang' => $item->nama_barang,
+                    'jumlah' => $jumlah,
+                    'gudang' => $item->gudang
+                ];
+                
                 if ($jumlah == 0) {
-                    $stockHabis++;
+                    $stockHabis[] = $itemDetail;
                 } elseif ($jumlah > 0 && $jumlah <= 10) {
-                    $stockMenupis++;
+                    $stockMenupis[] = $itemDetail;
                 } else {
-                    $stockSiapPakai++;
+                    $stockSiapPakai[] = $itemDetail;
                 }
             }
             
             $chartData = [
-                ['name' => 'Stock Habis', 'value' => $stockHabis],
-                ['name' => 'Stock Menipis', 'value' => $stockMenupis],
-                ['name' => 'Siap Pakai', 'value' => $stockSiapPakai]
+                ['name' => 'Stock Habis', 'value' => count($stockHabis)],
+                ['name' => 'Stock Menipis', 'value' => count($stockMenupis)],
+                ['name' => 'Siap Pakai', 'value' => count($stockSiapPakai)]
             ];
 
-            return response()->json($chartData);
+            return response()->json([
+                'chart_data' => $chartData,
+                'detail_items' => [
+                    'stock_habis' => array_slice($stockHabis, 0, 10), // Limit 10 items untuk performa
+                    'stock_menipis' => array_slice($stockMenupis, 0, 10),
+                    'siap_pakai' => array_slice($stockSiapPakai, 0, 10)
+                ],
+                'total_counts' => [
+                    'stock_habis' => count($stockHabis),
+                    'stock_menipis' => count($stockMenupis),
+                    'siap_pakai' => count($stockSiapPakai)
+                ]
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error fetching stock chart data',

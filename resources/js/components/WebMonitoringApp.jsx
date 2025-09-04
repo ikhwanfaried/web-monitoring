@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PieChart from './PieChart';
 import LineChart from './LineChart';
-import StockPieChart from './StockPieChart';
+import SafeStockPieChart from './SafeStockPieChart';
 
 const WebMonitoringApp = ({ user }) => {
     const [dashboardData, setDashboardData] = useState({
@@ -26,6 +26,11 @@ const WebMonitoringApp = ({ user }) => {
     const [gudangList, setGudangList] = useState([]);
     const [selectedGudang, setSelectedGudang] = useState('all');
     const [gudangData, setGudangData] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [itemsPerPage, setItemsPerPage] = useState(25);
 
     // Simple tab change function
     const changeTab = (tabName) => {
@@ -46,11 +51,12 @@ const WebMonitoringApp = ({ user }) => {
     }, []);
 
     useEffect(() => {
-        // Fetch gudang data ketika selectedGudang berubah
+        // Fetch gudang data ketika selectedGudang berubah dan reset ke halaman 1
         if (activeTab === 'gudang') {
-            fetchGudangData();
+            setCurrentPage(1);
+            fetchGudangData(1, itemsPerPage);
         }
-    }, [selectedGudang, activeTab]);
+    }, [selectedGudang, activeTab, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchDashboardData = async () => {
         try {
@@ -102,17 +108,66 @@ const WebMonitoringApp = ({ user }) => {
         }
     };
 
-    const fetchGudangData = async () => {
+    const fetchGudangData = async (page = 1, perPage = itemsPerPage) => {
         try {
+            setLoading(true);
+            
+            // Gunakan pagination normal saja
             const url = selectedGudang === 'all' 
-                ? '/api/gudang?per_page=100'
-                : `/api/gudang?filter=${selectedGudang}&per_page=100`;
+                ? `/api/gudang?page=${page}&per_page=${perPage}`
+                : `/api/gudang?filter=${selectedGudang}&page=${page}&per_page=${perPage}`;
+            
             const response = await fetch(url);
             const data = await response.json();
+            
             setGudangData(data.data || []);
+            setCurrentPage(data.current_page || 1);
+            setTotalPages(data.last_page || 1);
+            setTotalItems(data.total || 0);
         } catch (error) {
             console.error('Error fetching gudang data:', error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    // Fungsi untuk navigasi pagination
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            fetchGudangData(page, itemsPerPage);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            handlePageChange(currentPage + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            handlePageChange(currentPage - 1);
+        }
+    };
+
+    // Handler untuk mengubah items per page
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1);
+        setShowAll(false);
+    };
+
+    // Handler untuk show all
+    const handleShowAll = () => {
+        setShowAll(true);
+        setCurrentPage(1);
+    };
+
+    // Handler untuk kembali ke pagination
+    const handleShowPaginated = () => {
+        setShowAll(false);
+        setCurrentPage(1);
     };
 
     const renderContent = () => {
@@ -284,19 +339,50 @@ const WebMonitoringApp = ({ user }) => {
                                 <div>
                                     <p className="text-blue-800 font-semibold">
                                         {selectedGudang === 'all' 
-                                            ? `Total Semua Gudang: ${dashboardData.gudang.toLocaleString()}` 
+                                            ? `Total Semua Gudang: ${totalItems.toLocaleString()} item` 
                                             : `Data untuk: ${selectedGudang}`
                                         }
                                     </p>
                                     <p className="text-blue-600 text-sm">
-                                        {gudangData.length > 0 
-                                            ? `Menampilkan ${gudangData.length} item` 
+                                        {totalItems > 0 
+                                            ? `Halaman ${currentPage} dari ${totalPages} | Menampilkan ${gudangData.length} dari ${totalItems.toLocaleString()} item` 
                                             : 'Belum ada data'
                                         }
                                     </p>
                                 </div>
                                 <div className="text-blue-600">
                                     <span className="text-2xl">🏢</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pagination Controls */}
+                        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <label htmlFor="items-per-page" className="text-sm font-medium text-gray-700">
+                                            Items per page:
+                                        </label>
+                                        <select
+                                            id="items-per-page"
+                                            value={itemsPerPage}
+                                            onChange={(e) => {
+                                                setItemsPerPage(parseInt(e.target.value));
+                                                setCurrentPage(1);
+                                            }}
+                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        >
+                                            <option value={10}>10</option>
+                                            <option value={25}>25</option>
+                                            <option value={50}>50</option>
+                                            <option value={100}>100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div className="text-sm text-gray-600">
+                                    Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems.toLocaleString()} items
                                 </div>
                             </div>
                         </div>
@@ -351,11 +437,87 @@ const WebMonitoringApp = ({ user }) => {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
-                                        <span>Total data: {gudangData.length} item</span>
-                                        <span className="text-blue-600">
-                                            📊 Total Stok: {gudangData.reduce((sum, item) => sum + (parseInt(item.jumlah) || 0), 0).toLocaleString()} unit
-                                        </span>
+                                    
+                                    {/* Loading State */}
+                                    {loading && (
+                                        <div className="text-center py-4">
+                                            <div className="inline-flex items-center px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg">
+                                                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Memuat data...
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Pagination Controls */}
+                                    {totalPages > 1 && (
+                                        <div className="mt-4 flex justify-between items-center">
+                                            <div className="text-sm text-gray-500">
+                                                Menampilkan halaman {currentPage} dari {totalPages} | Total: {totalItems.toLocaleString()} item
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={handlePrevPage}
+                                                    disabled={currentPage === 1 || loading}
+                                                    className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                                                        currentPage === 1 || loading
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                    }`}
+                                                >
+                                                    ← Previous
+                                                </button>
+                                                
+                                                {/* Page Numbers */}
+                                                <div className="flex space-x-1">
+                                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                        let pageNum;
+                                                        if (totalPages <= 5) {
+                                                            pageNum = i + 1;
+                                                        } else if (currentPage <= 3) {
+                                                            pageNum = i + 1;
+                                                        } else if (currentPage >= totalPages - 2) {
+                                                            pageNum = totalPages - 4 + i;
+                                                        } else {
+                                                            pageNum = currentPage - 2 + i;
+                                                        }
+                                                        
+                                                        return (
+                                                            <button
+                                                                key={pageNum}
+                                                                onClick={() => handlePageChange(pageNum)}
+                                                                disabled={loading}
+                                                                className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                                                                    currentPage === pageNum
+                                                                        ? 'bg-blue-600 text-white'
+                                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                                }`}
+                                                            >
+                                                                {pageNum}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                <button
+                                                    onClick={handleNextPage}
+                                                    disabled={currentPage === totalPages || loading}
+                                                    className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                                                        currentPage === totalPages || loading
+                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                    }`}
+                                                >
+                                                    Next →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="mt-3 text-center text-sm text-gray-500">
+                                        📊 Total Stok Halaman Ini: {gudangData.reduce((sum, item) => sum + (parseInt(item.jumlah) || 0), 0).toLocaleString()} unit
                                     </div>
                                 </div>
                             ) : (
@@ -374,7 +536,7 @@ const WebMonitoringApp = ({ user }) => {
 
                         {/* Stock Chart - Grafik Pie Chart Stock */}
                         <div className="mt-8">
-                            <StockPieChart 
+                            <SafeStockPieChart 
                                 selectedGudang={selectedGudang} 
                                 title="📊 Distribusi Stock Barang"
                             />
