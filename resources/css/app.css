@@ -55,3 +55,118 @@
     font-size: 11px !important;
     height: 32px !important;
 }
+
+/* Custom CSS untuk Dropdown Gudang */
+.gudang-dropdown {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #cbd5e0 #f7fafc !important;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.gudang-dropdown::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.gudang-dropdown::-webkit-scrollbar-track {
+    background: #f7fafc !important;
+}
+
+.gudang-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e0 !important;
+    border-radius: 3px !important;
+}
+
+.gudang-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0 !important;
+}
+
+/* Untuk dropdown option dengan banyak pilihan */
+.gudang-dropdown option {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.gudang-dropdown option:hover {
+    background-color: #f7fafc !important;
+}
+
+/* Alternative: Custom dropdown dengan div jika select tidak berfungsi */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.custom-dropdown-content {
+    display: block;
+    position: absolute;
+    background-color: white;
+    min-width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    z-index: 1000;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    margin-top: 4px;
+}
+
+.custom-dropdown-content .max-h-60 {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.custom-dropdown-content .max-h-60::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-dropdown-content .max-h-60::-webkit-scrollbar-track {
+    background: #f7fafc;
+}
+
+.custom-dropdown-content .max-h-60::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+.custom-dropdown-content .max-h-60::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+.custom-dropdown-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-dropdown-item:hover {
+    background-color: #f9fafb;
+}
+
+.custom-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.custom-dropdown-item.bg-blue-50 {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    font-weight: 500;
+}
+
+/* Search input styling */
+.custom-dropdown-content input {
+    border-radius: 4px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-dropdown-content input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}

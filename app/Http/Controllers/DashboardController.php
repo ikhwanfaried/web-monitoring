@@ -336,23 +336,38 @@ class DashboardController extends Controller
     public function getGudangList()
     {
         try {
-            // Ambil daftar gudang unik dari dataset2
+            // Ambil semua gudang dari tabel gudang (432 gudang)
+            $gudangList = DB::table('gudang')
+                ->select('Location as Gudang')
+                ->orderBy('Location')
+                ->get();
+
+            // Debug: log jumlah gudang yang ditemukan
+            \Log::info('Total gudang from gudang table: ' . $gudangList->count());
+            
+            return response()->json([
+                'data' => $gudangList,
+                'total_count' => $gudangList->count(),
+                'source' => 'gudang_table'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error accessing gudang table, falling back to dataset2: ' . $e->getMessage());
+            
+            // Fallback ke dataset2 jika tabel gudang tidak accessible
             $gudangList = DB::table('dataset2')
                 ->select('Gudang')
                 ->distinct()
                 ->whereNotNull('Gudang')
                 ->where('Gudang', '!=', '')
+                ->where('Gudang', '!=', ' ')
                 ->orderBy('Gudang')
                 ->get();
 
             return response()->json([
-                'data' => $gudangList
+                'data' => $gudangList,
+                'total_count' => $gudangList->count(),
+                'source' => 'dataset2_fallback'
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error fetching gudang list',
-                'message' => $e->getMessage()
-            ], 500);
         }
     }
 

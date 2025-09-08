@@ -31,6 +31,8 @@ const WebMonitoringApp = ({ user }) => {
     const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(25);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [searchGudang, setSearchGudang] = useState('');
 
     // Simple tab change function
     const changeTab = (tabName) => {
@@ -57,6 +59,20 @@ const WebMonitoringApp = ({ user }) => {
             fetchGudangData(1, itemsPerPage);
         }
     }, [selectedGudang, activeTab, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownOpen && !event.target.closest('.custom-dropdown')) {
+                setDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownOpen]);
 
     const fetchDashboardData = async () => {
         try {
@@ -102,9 +118,19 @@ const WebMonitoringApp = ({ user }) => {
         try {
             const response = await fetch('/api/gudang-list');
             const data = await response.json();
-            setGudangList(data.data || []);
+            console.log('🏢 Gudang list response:', data);
+            console.log('📊 Total gudang received:', data.data ? data.data.length : 0);
+            console.log('🔄 Data source:', data.source || 'unknown');
+            
+            if (data.data) {
+                setGudangList(data.data);
+                console.log('✅ Gudang list set successfully with', data.data.length, 'items');
+                
+                // Debug: log first 10 gudang
+                console.log('📋 First 10 gudang:', data.data.slice(0, 10).map(g => g.Gudang));
+            }
         } catch (error) {
-            console.error('Error fetching gudang list:', error);
+            console.error('❌ Error fetching gudang list:', error);
         }
     };
 
@@ -316,19 +342,79 @@ const WebMonitoringApp = ({ user }) => {
                                     <label htmlFor="gudang-select" className="block text-sm font-medium text-gray-700 mb-2">
                                         Filter Gudang:
                                     </label>
-                                    <select
-                                        id="gudang-select"
-                                        value={selectedGudang}
-                                        onChange={(e) => setSelectedGudang(e.target.value)}
-                                        className="block w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="all">🏢 Semua Gudang</option>
-                                        {gudangList.map((gudang, index) => (
-                                            <option key={index} value={gudang.Gudang}>
-                                                📦 {gudang.Gudang}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="custom-dropdown">
+                                        <button
+                                            type="button"
+                                            onClick={() => setDropdownOpen(!dropdownOpen)}
+                                            className="relative block w-64 px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                        >
+                                            <span className="block truncate">
+                                                {selectedGudang === 'all' ? '🏢 Semua Gudang' : `📦 ${selectedGudang}`}
+                                            </span>
+                                            <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </span>
+                                        </button>
+                                        
+                                        {dropdownOpen && (
+                                            <div className="custom-dropdown-content">
+                                                {/* Search Input */}
+                                                <div className="p-2 border-b border-gray-200 bg-gray-50">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="🔍 Cari gudang..."
+                                                        value={searchGudang}
+                                                        onChange={(e) => setSearchGudang(e.target.value)}
+                                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </div>
+                                                
+                                                {/* Gudang Options */}
+                                                <div className="max-h-60 overflow-y-auto">
+                                                    <div 
+                                                        className={`custom-dropdown-item ${selectedGudang === 'all' ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                        onClick={() => {
+                                                            setSelectedGudang('all');
+                                                            setDropdownOpen(false);
+                                                            setSearchGudang('');
+                                                        }}
+                                                    >
+                                                        🏢 Semua Gudang
+                                                    </div>
+                                                    {gudangList
+                                                        .filter(gudang => 
+                                                            gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
+                                                        )
+                                                        .map((gudang, index) => (
+                                                            <div 
+                                                                key={index}
+                                                                className={`custom-dropdown-item ${selectedGudang === gudang.Gudang ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                                onClick={() => {
+                                                                    setSelectedGudang(gudang.Gudang);
+                                                                    setDropdownOpen(false);
+                                                                    setSearchGudang('');
+                                                                }}
+                                                            >
+                                                                📦 {gudang.Gudang}
+                                                            </div>
+                                                        ))
+                                                    }
+                                                    
+                                                    {/* No results message */}
+                                                    {searchGudang && gudangList.filter(gudang => 
+                                                        gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
+                                                    ).length === 0 && (
+                                                        <div className="custom-dropdown-item text-gray-500 text-center">
+                                                            Tidak ada gudang yang ditemukan
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
