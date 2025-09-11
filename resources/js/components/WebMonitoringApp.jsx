@@ -34,6 +34,20 @@ const WebMonitoringApp = ({ user }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchGudang, setSearchGudang] = useState('');
 
+    // State untuk modal add user
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
+    const [addUserForm, setAddUserForm] = useState({
+        username: '',
+        password: '',
+        Nama: '',
+        NRP: '',
+        Email: '',
+        id_satuan: ''
+    });
+    const [addUserLoading, setAddUserLoading] = useState(false);
+    const [addUserSuccess, setAddUserSuccess] = useState(false);
+    const [addUserError, setAddUserError] = useState('');
+
     // Simple tab change function
     const changeTab = (tabName) => {
         setActiveTab(tabName);
@@ -112,6 +126,69 @@ const WebMonitoringApp = ({ user }) => {
         } catch (error) {
             console.error('Error fetching transaction status data:', error);
         }
+    };
+
+    // Fungsi untuk handle add user modal
+    const handleAddUserChange = (e) => {
+        setAddUserForm({ ...addUserForm, [e.target.name]: e.target.value });
+    };
+
+    const handleAddUserSubmit = async (e) => {
+        e.preventDefault();
+        setAddUserLoading(true);
+        setAddUserError('');
+        setAddUserSuccess(false);
+        
+        // Convert NRP dan id_satuan to integer
+        const submitData = {
+            ...addUserForm,
+            NRP: parseInt(addUserForm.NRP),
+            id_satuan: parseInt(addUserForm.id_satuan)
+        };
+        
+        console.log('Submitting user data:', submitData);
+        
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            console.log('CSRF Token:', csrfToken);
+            
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(submitData)
+            });
+            
+            console.log('Response status:', res.status);
+            const responseData = await res.json();
+            console.log('Response data:', responseData);
+            
+            if (res.ok) {
+                setAddUserSuccess(true);
+                setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '' });
+                setTimeout(() => {
+                    setShowAddUserModal(false);
+                    setAddUserSuccess(false);
+                }, 2000);
+            } else {
+                setAddUserError(responseData.message || responseData.error || 'Gagal menambah user');
+                console.error('Server error:', responseData);
+            }
+        } catch (err) {
+            console.error('Network error:', err);
+            setAddUserError('Network error: ' + err.message);
+        }
+        
+        setAddUserLoading(false);
+    };
+
+    const closeAddUserModal = () => {
+        setShowAddUserModal(false);
+        setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '' });
+        setAddUserError('');
+        setAddUserSuccess(false);
     };
 
     const fetchGudangList = async () => {
@@ -661,11 +738,18 @@ const WebMonitoringApp = ({ user }) => {
                         {[
                             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
                             { id: 'gudang', label: 'Gudang', icon: '🏢' },
-                            { id: 'transaksi', label: 'Transaksi', icon: '💳' }
+                            { id: 'transaksi', label: 'Transaksi', icon: '💳' },
+                            { id: 'add-user', label: 'Tambah User', icon: '👤' }
                         ].map(menu => (
                             <button
                                 key={menu.id}
-                                onClick={() => setActiveTab(menu.id)}
+                                onClick={() => {
+                                    if (menu.id === 'add-user') {
+                                        setShowAddUserModal(true);
+                                    } else {
+                                        setActiveTab(menu.id);
+                                    }
+                                }}
                                 className={`w-full flex items-center space-x-3 px-2 group-hover:px-4 py-3 rounded-lg transition-all duration-300 text-left relative ${
                                     activeTab === menu.id
                                         ? 'bg-cyan-500 text-white'
@@ -715,6 +799,139 @@ const WebMonitoringApp = ({ user }) => {
                     {renderContent()}
                 </main>
             </div>
+
+            {/* Modal Add User */}
+            {showAddUserModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-blue-700">Tambah User Baru</h2>
+                            <button
+                                onClick={closeAddUserModal}
+                                className="text-gray-500 hover:text-gray-700 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleAddUserSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                                    <input 
+                                        type="text" 
+                                        name="username" 
+                                        value={addUserForm.username} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan username"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                    <input 
+                                        type="password" 
+                                        name="password" 
+                                        value={addUserForm.password} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama</label>
+                                    <input 
+                                        type="text" 
+                                        name="Nama" 
+                                        value={addUserForm.Nama} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan nama lengkap"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">NRP</label>
+                                    <input 
+                                        type="number" 
+                                        name="NRP" 
+                                        value={addUserForm.NRP} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan NRP (angka)"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                    <input 
+                                        type="email" 
+                                        name="Email" 
+                                        value={addUserForm.Email} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan email"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">ID Satuan</label>
+                                    <input 
+                                        type="number" 
+                                        name="id_satuan" 
+                                        value={addUserForm.id_satuan} 
+                                        onChange={handleAddUserChange} 
+                                        required 
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Masukkan ID satuan (angka)"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-4 pt-4">
+                                <button 
+                                    type="button"
+                                    onClick={closeAddUserModal}
+                                    className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    disabled={addUserLoading} 
+                                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition"
+                                >
+                                    {addUserLoading ? 'Menyimpan...' : 'Tambah User'}
+                                </button>
+                            </div>
+                            
+                            {addUserSuccess && (
+                                <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-4">
+                                    <div className="flex items-center">
+                                        <span className="text-green-400 text-xl mr-2">✅</span>
+                                        <p className="text-sm font-medium text-green-800">
+                                            User berhasil ditambahkan!
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {addUserError && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-4">
+                                    <div className="flex items-center">
+                                        <span className="text-red-400 text-xl mr-2">❌</span>
+                                        <p className="text-sm font-medium text-red-800">
+                                            {addUserError}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

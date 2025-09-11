@@ -21,3 +21,4 @@ Route::get('/transaction-status-chart', [DashboardController::class, 'getTransac
 Route::get('/daily-login-chart', [DashboardController::class, 'getDailyLoginChart']);
 Route::get('/gudang-list', [DashboardController::class, 'getGudangList']);
 Route::get('/stock-chart', [DashboardController::class, 'getStockChart']);
+Route::post('/users', [DashboardController::class, 'createUser']);

@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use App\Models\LoginLog;
 use App\Models\Transaksi1;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -433,6 +436,55 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error fetching stock chart data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function createUser(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'username' => 'required|string|max:255|unique:user',
+                'password' => 'required|string|min:6',
+                'Nama' => 'required|string|max:255',
+                'NRP' => 'required|integer|unique:user,NRP',
+                'Email' => 'required|email|max:255|unique:user,Email',
+                'id_satuan' => 'required|integer'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'messages' => $validator->errors()
+                ], 422);
+            }
+
+            $user = User::create([
+                'username' => $request->username,
+                'password' => Hash::make($request->password),
+                'Nama' => $request->Nama,
+                'NRP' => $request->NRP,
+                'Email' => $request->Email,
+                'id_satuan' => $request->id_satuan
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User berhasil ditambahkan',
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'Nama' => $user->Nama,
+                    'NRP' => $user->NRP,
+                    'Email' => $user->Email,
+                    'id_satuan' => $user->id_satuan
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error creating user',
                 'message' => $e->getMessage()
             ], 500);
         }

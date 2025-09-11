@@ -10,11 +10,33 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        
+        <!-- Tailwind CSS CDN sebagai fallback -->
+        <script src="https://cdn.tailwindcss.com"></script>
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.jsx'])
+        <link rel="stylesheet" href="{{ asset('build/assets/app-C5a0SiSn.css') }}">
     </head>
     <body class="font-sans antialiased">
         <div id="app"></div>
+        
+        <!-- Debug info -->
+        <script>
+            console.log('App page loaded');
+            console.log('App element:', document.getElementById('app'));
+        </script>
+        
+        <script type="module" src="{{ asset('build/assets/app-DO4HrrQf.js') }}"></script>
+        
+        <!-- Error fallback -->
+        <script>
+            setTimeout(() => {
+                const appElement = document.getElementById('app');
+                if (!appElement || appElement.innerHTML.trim() === '') {
+                    console.error('React app failed to load');
+                    appElement.innerHTML = '<div class="flex items-center justify-center min-h-screen bg-gray-100"><div class="text-center"><h1 class="text-2xl font-bold text-red-600">Loading Error</h1><p class="text-gray-600">Please refresh the page</p></div></div>';
+                }
+            }, 3000);
+        </script>
     </body>
 </html>
