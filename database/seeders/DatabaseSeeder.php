@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             Dataset2Seeder::class,
             Transaksi1Seeder::class,
             Transaksi2Seeder::class,
+            Dataset40200Seeder::class,
         ]);
     }
 }
