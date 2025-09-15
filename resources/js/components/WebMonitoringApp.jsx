@@ -34,6 +34,17 @@ const WebMonitoringApp = ({ user }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchGudang, setSearchGudang] = useState('');
 
+    // State untuk transaksi
+    const [transaksiData, setTransaksiData] = useState([]);
+    const [transaksiCurrentPage, setTransaksiCurrentPage] = useState(1);
+    const [transaksiTotalPages, setTransaksiTotalPages] = useState(1);
+    const [transaksiTotal, setTransaksiTotal] = useState(0);
+    const [transaksiLoading, setTransaksiLoading] = useState(false);
+    const [transaksiPerPage, setTransaksiPerPage] = useState(15);
+    const [showAll, setShowAll] = useState(false);
+    const [selectedTransaksiGudang, setSelectedTransaksiGudang] = useState('all');
+    const [transaksiGudangList, setTransaksiGudangList] = useState([]);
+
     // State untuk modal add user
     const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [addUserForm, setAddUserForm] = useState({
@@ -72,7 +83,21 @@ const WebMonitoringApp = ({ user }) => {
             setCurrentPage(1);
             fetchGudangData(1, itemsPerPage);
         }
-    }, [selectedGudang, activeTab, itemsPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+        // Fetch transaksi data ketika tab transaksi dibuka
+        if (activeTab === 'transaksi') {
+            fetchTransaksiGudangList();
+            setTransaksiCurrentPage(1);
+            fetchTransaksiData(1, transaksiPerPage);
+        }
+    }, [selectedGudang, activeTab, itemsPerPage, transaksiPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Effect terpisah untuk filter transaksi gudang
+    useEffect(() => {
+        if (activeTab === 'transaksi' && selectedTransaksiGudang) {
+            setTransaksiCurrentPage(1);
+            fetchTransaksiData(1, transaksiPerPage);
+        }
+    }, [selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -125,6 +150,44 @@ const WebMonitoringApp = ({ user }) => {
             setTransactionStatusData(data);
         } catch (error) {
             console.error('Error fetching transaction status data:', error);
+        }
+    };
+
+    const fetchTransaksiData = async (page = 1, perPage = 15) => {
+        if (transaksiLoading) return;
+        
+        setTransaksiLoading(true);
+        try {
+            const filterParam = selectedTransaksiGudang !== 'all' ? `&filter=${encodeURIComponent(selectedTransaksiGudang)}` : '';
+            const response = await fetch(`/api/transaksi?page=${page}&per_page=${perPage}${filterParam}`);
+            const data = await response.json();
+            
+            console.log('📄 Transaksi response:', data);
+            
+            if (data.data) {
+                setTransaksiData(data.data);
+                setTransaksiCurrentPage(data.current_page);
+                setTransaksiTotalPages(data.last_page);
+                setTransaksiTotal(data.total);
+            }
+        } catch (error) {
+            console.error('Error fetching transaction data:', error);
+        } finally {
+            setTransaksiLoading(false);
+        }
+    };
+
+    const fetchTransaksiGudangList = async () => {
+        try {
+            const response = await fetch('/api/transaksi-gudang-list');
+            const data = await response.json();
+            console.log('🏢 Transaksi gudang list response:', data);
+            
+            if (data.data) {
+                setTransaksiGudangList(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching transaction gudang list:', error);
         }
     };
 
@@ -271,6 +334,26 @@ const WebMonitoringApp = ({ user }) => {
     const handleShowPaginated = () => {
         setShowAll(false);
         setCurrentPage(1);
+    };
+
+    // Handler untuk pagination transaksi
+    const handleTransaksiPageChange = (page) => {
+        if (page !== transaksiCurrentPage && page >= 1 && page <= transaksiTotalPages) {
+            setTransaksiCurrentPage(page);
+            fetchTransaksiData(page, transaksiPerPage);
+        }
+    };
+
+    const handleTransaksiNextPage = () => {
+        if (transaksiCurrentPage < transaksiTotalPages) {
+            handleTransaksiPageChange(transaksiCurrentPage + 1);
+        }
+    };
+
+    const handleTransaksiPrevPage = () => {
+        if (transaksiCurrentPage > 1) {
+            handleTransaksiPageChange(transaksiCurrentPage - 1);
+        }
     };
 
     const renderContent = () => {
@@ -709,11 +792,188 @@ const WebMonitoringApp = ({ user }) => {
             case 'transaksi':
                 return (
                     <div className="bg-white rounded-lg shadow-md p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Data Transaksi</h2>
-                        <p className="text-gray-600">Halaman untuk mengelola data transaksi akan ditampilkan di sini.</p>
-                        <div className="mt-4 p-4 bg-cyan-50 rounded border border-cyan-200">
-                            <p className="text-cyan-800">Fitur transaksi dalam pengembangan.</p>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                                <span className="text-2xl mr-2">💳</span>
+                                Data Transaksi
+                            </h2>
+                            <div className="text-sm text-gray-600">
+                                Total: {transaksiTotal.toLocaleString()} transaksi
+                            </div>
                         </div>
+
+                        {/* Filter Gudang */}
+                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-center space-x-4">
+                                <label className="text-sm font-medium text-gray-700">Filter Gudang:</label>
+                                <select
+                                    value={selectedTransaksiGudang}
+                                    onChange={(e) => {
+                                        const newFilter = e.target.value;
+                                        console.log('🔄 Changing filter to:', newFilter);
+                                        setSelectedTransaksiGudang(newFilter);
+                                        setTransaksiCurrentPage(1);
+                                        // Note: fetchTransaksiData will be called by useEffect
+                                    }}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="all">Semua Gudang ({transaksiGudangList.length})</option>
+                                    {transaksiGudangList.map((gudang, index) => (
+                                        <option key={index} value={gudang.gudang}>
+                                            {gudang.gudang}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                                {selectedTransaksiGudang !== 'all' && (
+                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        Filter: {selectedTransaksiGudang}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {transaksiLoading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                                    <p className="mt-4 text-gray-600">Loading data transaksi...</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full table-auto">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Dokumen</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part Number</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Barang</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dari Gudang</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ke Gudang</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Sista</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Permintaan</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Penerimaan</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Pengiriman</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {transaksiData.map((item, index) => (
+                                                <tr key={item.id || index} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{item.nomor_dokumen || '-'}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.part_number || '-'}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={item.nama_barang || 'Nama barang tidak ditemukan'}>
+                                                        {item.nama_barang || '-'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.dari_gudang || '-'}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.ke_gudang || '-'}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.dipasang_di_no_reg_sista || '-'}</td>
+                                                    <td className="px-4 py-3 text-sm">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            item.status_permintaan === 'Diproses' 
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : item.status_permintaan === 'Selesai'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {item.status_permintaan || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            item.status_penerimaan === 'COMPLETE' 
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : item.status_penerimaan === 'NONE'
+                                                                ? 'bg-gray-100 text-gray-800'
+                                                                : 'bg-blue-100 text-blue-800'
+                                                        }`}>
+                                                            {item.status_penerimaan || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm">
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            item.status_pengiriman === 'SHIPPED' 
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : item.status_pengiriman === 'ENTERED'
+                                                                ? 'bg-blue-100 text-blue-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {item.status_pengiriman || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.site || '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {transaksiData.length === 0 && !transaksiLoading && (
+                                    <div className="text-center py-12">
+                                        <div className="text-gray-400 text-6xl mb-4">📄</div>
+                                        <p className="text-gray-500 text-lg">Tidak ada data transaksi</p>
+                                    </div>
+                                )}
+
+                                {/* Pagination untuk transaksi */}
+                                {transaksiTotalPages > 1 && (
+                                    <div className="mt-6 flex items-center justify-between">
+                                        <div className="text-sm text-gray-700">
+                                            Halaman {transaksiCurrentPage} dari {transaksiTotalPages} 
+                                            ({transaksiTotal.toLocaleString()} total transaksi)
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={handleTransaksiPrevPage}
+                                                disabled={transaksiCurrentPage === 1 || transaksiLoading}
+                                                className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Previous
+                                            </button>
+                                            
+                                            {/* Page numbers */}
+                                            {Array.from({ length: Math.min(5, transaksiTotalPages) }, (_, i) => {
+                                                let pageNum;
+                                                if (transaksiTotalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (transaksiCurrentPage <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (transaksiCurrentPage >= transaksiTotalPages - 2) {
+                                                    pageNum = transaksiTotalPages - 4 + i;
+                                                } else {
+                                                    pageNum = transaksiCurrentPage - 2 + i;
+                                                }
+                                                
+                                                return (
+                                                    <button
+                                                        key={pageNum}
+                                                        onClick={() => handleTransaksiPageChange(pageNum)}
+                                                        disabled={transaksiLoading}
+                                                        className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                                                            transaksiCurrentPage === pageNum
+                                                                ? 'bg-blue-600 text-white'
+                                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                        }`}
+                                                    >
+                                                        {pageNum}
+                                                    </button>
+                                                );
+                                            })}
+                                            
+                                            <button
+                                                onClick={handleTransaksiNextPage}
+                                                disabled={transaksiCurrentPage === transaksiTotalPages || transaksiLoading}
+                                                className="px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 );
             default:

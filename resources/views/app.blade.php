@@ -15,7 +15,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
 
         <!-- Scripts -->
-        <link rel="stylesheet" href="{{ asset('build/assets/app-C5a0SiSn.css') }}">
+        @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     </head>
     <body class="font-sans antialiased">
         <div id="app"></div>
@@ -25,8 +25,6 @@
             console.log('App page loaded');
             console.log('App element:', document.getElementById('app'));
         </script>
-        
-        <script type="module" src="{{ asset('build/assets/app-DO4HrrQf.js') }}"></script>
         
         <!-- Error fallback -->
         <script>

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\LoginLog;
 use App\Models\Transaksi1;
 use App\Models\User;
+use App\Models\Dataset40200;
 
 class DashboardController extends Controller
 {
@@ -485,6 +486,106 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error creating user',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTransaksi(Request $request)
+    {
+        try {
+            $page = $request->get('page', 1);
+            $perPage = $request->get('per_page', 15);
+            $filter = $request->get('filter', 'all');
+            
+            // Batasi per_page maksimum untuk performa server
+            $maxPerPage = 100;
+            if ($perPage > $maxPerPage) {
+                $perPage = $maxPerPage;
+            }
+            
+            $query = Dataset40200::select(
+                'dataset40200.id',
+                'dataset40200.nomor_dokumen',
+                'dataset40200.part_number',
+                'dataset2.Nama Barang as nama_barang',
+                'dataset40200.dari_gudang',
+                'dataset40200.ke_gudang',
+                'dataset40200.dipasang_di_no_reg_sista',
+                'dataset40200.status_permintaan',
+                'dataset40200.status_penerimaan',
+                'dataset40200.status_pengiriman',
+                'dataset40200.site'
+            )
+            ->leftJoin('dataset2', 'dataset40200.part_number', '=', 'dataset2.Part Number');
+            
+            // Terapkan filter jika bukan 'all'
+            if ($filter && $filter !== 'all') {
+                $query->where(function($q) use ($filter) {
+                    $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('ke_gudang', 'LIKE', '%' . $filter . '%');
+                });
+            }
+            
+            $items = $query
+                ->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->get();
+            
+            // Hitung total dengan filter yang sama (tanpa JOIN untuk performance)
+            $totalQuery = Dataset40200::query();
+            if ($filter && $filter !== 'all') {
+                $totalQuery->where(function($q) use ($filter) {
+                    $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('ke_gudang', 'LIKE', '%' . $filter . '%');
+                });
+            }
+            $total = $totalQuery->count();
+            $lastPage = ceil($total / $perPage);
+
+            return response()->json([
+                'data' => $items,
+                'current_page' => (int) $page,
+                'last_page' => $lastPage,
+                'per_page' => (int) $perPage,
+                'total' => $total,
+                'filter' => $filter
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching transaction data',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTransaksiGudangList()
+    {
+        try {
+            // Gunakan raw SQL untuk menggabungkan dan mendeduplikasi gudang
+            $gudangList = DB::select("
+                SELECT DISTINCT gudang FROM (
+                    SELECT dari_gudang as gudang FROM dataset40200 
+                    WHERE dari_gudang IS NOT NULL AND dari_gudang != '' AND dari_gudang != ' '
+                    UNION 
+                    SELECT ke_gudang as gudang FROM dataset40200 
+                    WHERE ke_gudang IS NOT NULL AND ke_gudang != '' AND ke_gudang != ' '
+                ) as all_gudang 
+                ORDER BY gudang
+            ");
+
+            // Convert to collection format
+            $formattedGudang = collect($gudangList)->map(function($item) {
+                return ['gudang' => $item->gudang];
+            });
+
+            return response()->json([
+                'data' => $formattedGudang,
+                'total_count' => $formattedGudang->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching transaction gudang list',
                 'message' => $e->getMessage()
             ], 500);
         }
