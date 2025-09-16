@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import PieChart from './PieChart';
 import LineChart from './LineChart';
 import SafeStockPieChart from './SafeStockPieChart';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const WebMonitoringApp = ({ user }) => {
     const [dashboardData, setDashboardData] = useState({
@@ -44,6 +48,25 @@ const WebMonitoringApp = ({ user }) => {
     const [showAll, setShowAll] = useState(false);
     const [selectedTransaksiGudang, setSelectedTransaksiGudang] = useState('all');
     const [transaksiGudangList, setTransaksiGudangList] = useState([]);
+
+    // State untuk status chart
+    const [statusStatistics, setStatusStatistics] = useState({
+        status_permintaan: [],
+        status_penerimaan: [],
+        status_pengiriman: []
+    });
+    const [activeChartType, setActiveChartType] = useState('status_permintaan');
+    const [statusChartLoading, setStatusChartLoading] = useState(false);
+
+    // State untuk top active warehouses
+    const [warehouseStatistics, setWarehouseStatistics] = useState([]);
+    const [warehouseLoading, setWarehouseLoading] = useState(false);
+
+    // State untuk status detail hover
+    const [statusDetailData, setStatusDetailData] = useState(null);
+    const [statusDetailLoading, setStatusDetailLoading] = useState(false);
+    const [hoveredStatus, setHoveredStatus] = useState(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, side: 'right' });
 
     // State untuk modal add user
     const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -98,6 +121,14 @@ const WebMonitoringApp = ({ user }) => {
             fetchTransaksiData(1, transaksiPerPage);
         }
     }, [selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch status statistics and warehouse statistics when transaksi tab is active or filter changes
+    useEffect(() => {
+        if (activeTab === 'transaksi') {
+            fetchStatusStatistics();
+            fetchWarehouseStatistics();
+        }
+    }, [activeTab, selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -189,6 +220,96 @@ const WebMonitoringApp = ({ user }) => {
         } catch (error) {
             console.error('Error fetching transaction gudang list:', error);
         }
+    };
+
+    const fetchStatusStatistics = async () => {
+        try {
+            setStatusChartLoading(true);
+            const response = await fetch(`/api/status-statistics?filter=${selectedTransaksiGudang}`);
+            const data = await response.json();
+            console.log('📊 Status statistics response:', data);
+            
+            if (data.status_permintaan && data.status_penerimaan && data.status_pengiriman) {
+                setStatusStatistics(data);
+            }
+        } catch (error) {
+            console.error('Error fetching status statistics:', error);
+        } finally {
+            setStatusChartLoading(false);
+        }
+    };
+
+    const fetchWarehouseStatistics = async () => {
+        try {
+            setWarehouseLoading(true);
+            const response = await fetch(`/api/top-active-warehouses?filter=${selectedTransaksiGudang}&limit=10`);
+            const data = await response.json();
+            console.log('🏭 Warehouse statistics response:', data);
+            
+            if (data.success) {
+                setWarehouseStatistics(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching warehouse statistics:', error);
+        } finally {
+            setWarehouseLoading(false);
+        }
+    };
+
+    const fetchStatusDetail = async (statusType, statusValue) => {
+        try {
+            setStatusDetailLoading(true);
+            const response = await fetch(`/api/status-detail?status_type=${statusType}&status_value=${encodeURIComponent(statusValue)}&filter=${selectedTransaksiGudang}`);
+            const data = await response.json();
+            console.log('📋 Status detail response:', data);
+            
+            if (data.success) {
+                setStatusDetailData(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching status detail:', error);
+        } finally {
+            setStatusDetailLoading(false);
+        }
+    };
+
+    const calculateTooltipPosition = (event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const tooltipWidth = 320; // estimated tooltip width
+        const tooltipHeight = 200; // estimated tooltip height
+        
+        // Calculate if tooltip fits on the right side
+        const fitsRight = rect.right + tooltipWidth + 16 <= windowWidth;
+        
+        // Calculate if tooltip fits on the left side
+        const fitsLeft = rect.left - tooltipWidth - 16 >= 0;
+        
+        // Determine optimal side
+        let side = 'right';
+        if (!fitsRight && fitsLeft) {
+            side = 'left';
+        } else if (!fitsRight && !fitsLeft) {
+            // If neither side fits perfectly, choose based on available space
+            const rightSpace = windowWidth - rect.right;
+            const leftSpace = rect.left;
+            side = rightSpace > leftSpace ? 'right' : 'left';
+        }
+        
+        // Calculate vertical position
+        let yOffset = 0;
+        const tooltipBottom = rect.top + tooltipHeight;
+        if (tooltipBottom > windowHeight - 20) {
+            yOffset = windowHeight - tooltipBottom - 20;
+        }
+        
+        return {
+            x: rect.right,
+            y: rect.top,
+            side: side,
+            yOffset: yOffset
+        };
     };
 
     // Fungsi untuk handle add user modal
@@ -354,6 +475,372 @@ const WebMonitoringApp = ({ user }) => {
         if (transaksiCurrentPage > 1) {
             handleTransaksiPageChange(transaksiCurrentPage - 1);
         }
+    };
+
+    const renderStatusChart = () => {
+        const currentData = statusStatistics[activeChartType] || [];
+        
+        if (currentData.length === 0) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-gray-500">No data available</div>
+                </div>
+            );
+        }
+
+        const total = currentData.reduce((sum, item) => sum + item.count, 0);
+        
+        const chartData = {
+            labels: currentData.map(item => item.label),
+            datasets: [{
+                data: currentData.map(item => item.count),
+                backgroundColor: [
+                    '#3B82F6', // blue-500
+                    '#10B981', // emerald-500
+                    '#F59E0B', // amber-500
+                    '#EF4444', // red-500
+                    '#8B5CF6', // violet-500
+                    '#F97316', // orange-500
+                    '#06B6D4', // cyan-500
+                    '#84CC16', // lime-500
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+            }]
+        };
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false, // Hide default legend
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        };
+
+        const getChartTitle = () => {
+            switch(activeChartType) {
+                case 'status_permintaan': return 'Status Permintaan';
+                case 'status_penerimaan': return 'Status Penerimaan';
+                case 'status_pengiriman': return 'Status Pengiriman';
+                default: return 'Status Chart';
+            }
+        };
+
+        return (
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Chart */}
+                <div className="flex-1">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{getChartTitle()}</h3>
+                        <div className="text-sm text-gray-600">
+                            Total: {total.toLocaleString()} transaksi
+                        </div>
+                    </div>
+                    
+                    {/* Toggle Buttons */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        <button
+                            onClick={() => setActiveChartType('status_permintaan')}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_permintaan'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Permintaan
+                        </button>
+                        <button
+                            onClick={() => setActiveChartType('status_penerimaan')}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_penerimaan'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Penerimaan
+                        </button>
+                        <button
+                            onClick={() => setActiveChartType('status_pengiriman')}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_pengiriman'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Pengiriman
+                        </button>
+                    </div>
+
+                    <div className="h-80">
+                        <Doughnut data={chartData} options={options} />
+                    </div>
+                </div>
+
+                {/* Legend with Details */}
+                <div className="lg:w-80">
+                    <h4 className="text-md font-medium text-gray-900 mb-3">Detail Status</h4>
+                    <div className="space-y-2">
+                        {currentData.map((item, index) => {
+                            const percentage = ((item.count / total) * 100).toFixed(1);
+                            const backgroundColor = chartData.datasets[0].backgroundColor[index];
+                            const isHovered = hoveredStatus === `${activeChartType}-${item.label}`;
+                            
+                            return (
+                                <div 
+                                    key={item.label} 
+                                    className="relative flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                                    onMouseEnter={(e) => {
+                                        const position = calculateTooltipPosition(e);
+                                        setTooltipPosition(position);
+                                        setHoveredStatus(`${activeChartType}-${item.label}`);
+                                        fetchStatusDetail(activeChartType, item.label);
+                                    }}
+                                    onMouseLeave={() => {
+                                        setHoveredStatus(null);
+                                        setStatusDetailData(null);
+                                    }}
+                                >
+                                    <div className="flex items-center">
+                                        <div 
+                                            className="w-4 h-4 rounded mr-3"
+                                            style={{ backgroundColor }}
+                                        ></div>
+                                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-semibold text-gray-900">
+                                            {item.count.toLocaleString()}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {percentage}%
+                                        </div>
+                                    </div>
+
+                                    {/* Tooltip with detailed breakdown */}
+                                    {isHovered && statusDetailData && (
+                                        <div 
+                                            className={`fixed z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
+                                                tooltipPosition.side === 'left' ? 'transform -translate-x-full' : ''
+                                            }`}
+                                            style={{
+                                                left: tooltipPosition.side === 'left' 
+                                                    ? `${tooltipPosition.x - 8}px` 
+                                                    : `${tooltipPosition.x + 8}px`,
+                                                top: `${tooltipPosition.y + (tooltipPosition.yOffset || 0)}px`,
+                                                maxHeight: '400px'
+                                            }}
+                                        >
+                                            {/* Arrow indicator */}
+                                            <div 
+                                                className={`absolute top-4 w-0 h-0 ${
+                                                    tooltipPosition.side === 'left' 
+                                                        ? 'right-0 transform translate-x-1 border-l-8 border-l-white border-y-8 border-y-transparent' 
+                                                        : 'left-0 transform -translate-x-1 border-r-8 border-r-white border-y-8 border-y-transparent'
+                                                }`}
+                                                style={{ filter: 'drop-shadow(-1px 0 1px rgba(0,0,0,0.1))' }}
+                                            ></div>
+                                            <div 
+                                                className={`absolute top-4 w-0 h-0 ${
+                                                    tooltipPosition.side === 'left' 
+                                                        ? 'right-0 transform translate-x-0.5 border-l-8 border-l-gray-200 border-y-8 border-y-transparent' 
+                                                        : 'left-0 transform -translate-x-0.5 border-r-8 border-r-gray-200 border-y-8 border-y-transparent'
+                                                }`}
+                                            ></div>
+                                            
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h5 className="font-semibold text-gray-900">
+                                                    {item.label}
+                                                </h5>
+                                                <span className="text-sm text-gray-500">
+                                                    {statusDetailData.total_count.toLocaleString()} total
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="text-xs text-gray-600 mb-2">
+                                                Breakdown by warehouse:
+                                            </div>
+                                            
+                                            <div className="max-h-48 overflow-y-auto space-y-1">
+                                                {statusDetailLoading ? (
+                                                    <div className="text-xs text-gray-500">Loading...</div>
+                                                ) : statusDetailData.warehouse_breakdown.slice(0, 10).map((warehouse, idx) => (
+                                                    <div key={warehouse.gudang} className="flex justify-between items-center text-xs py-1 px-2 bg-gray-50 rounded">
+                                                        <span className="text-gray-700 truncate" title={warehouse.gudang}>
+                                                            {warehouse.gudang}
+                                                        </span>
+                                                        <div className="flex items-center ml-2">
+                                                            <span className="font-medium text-gray-900">
+                                                                {warehouse.count.toLocaleString()}
+                                                            </span>
+                                                            <span className="text-gray-500 ml-1">
+                                                                {warehouse.description}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {statusDetailData.warehouse_breakdown.length > 10 && (
+                                                    <div className="text-xs text-gray-500 text-center py-1">
+                                                        ... dan {statusDetailData.warehouse_breakdown.length - 10} gudang lainnya
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderTopWarehouses = () => {
+        if (warehouseLoading) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-gray-500">Loading warehouse statistics...</div>
+                </div>
+            );
+        }
+
+        if (warehouseStatistics.length === 0) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-gray-500">No warehouse data available</div>
+                </div>
+            );
+        }
+
+        const maxCount = Math.max(...warehouseStatistics.map(item => item.total_activity));
+        
+        const chartData = {
+            labels: warehouseStatistics.map(item => item.nama_gudang),
+            datasets: [
+                {
+                    label: 'Outgoing',
+                    data: warehouseStatistics.map(item => item.outgoing_count),
+                    backgroundColor: '#3B82F6', // blue-500
+                    borderColor: '#1D4ED8', // blue-700
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Incoming', 
+                    data: warehouseStatistics.map(item => item.incoming_count),
+                    backgroundColor: '#10B981', // emerald-500
+                    borderColor: '#047857', // emerald-700
+                    borderWidth: 1,
+                }
+            ]
+        };
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const warehouseIndex = context.dataIndex;
+                            const warehouse = warehouseStatistics[warehouseIndex];
+                            return `Total Activity: ${warehouse.total_activity.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false,
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0,
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: '#F3F4F6',
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        return (
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Chart */}
+                <div className="flex-1">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">Top Active Warehouses</h3>
+                        <div className="text-sm text-gray-600">
+                            Top {warehouseStatistics.length} most active warehouses
+                        </div>
+                    </div>
+                    
+                    <div className="h-80">
+                        <Bar data={chartData} options={options} />
+                    </div>
+                </div>
+
+                {/* Details */}
+                <div className="lg:w-80">
+                    <h4 className="text-md font-medium text-gray-900 mb-3">Warehouse Details</h4>
+                    <div className="space-y-2">
+                        {warehouseStatistics.map((warehouse, index) => (
+                            <div key={warehouse.nama_gudang} className="p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-gray-700">
+                                        {warehouse.nama_gudang}
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-900">
+                                        {warehouse.total_activity.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="flex items-center">
+                                        <div className="w-2 h-2 rounded bg-blue-500 mr-2"></div>
+                                        <span className="text-gray-600">
+                                            Out: {warehouse.outgoing_count.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <div className="w-2 h-2 rounded bg-emerald-500 mr-2"></div>
+                                        <span className="text-gray-600">
+                                            In: {warehouse.incoming_count.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const renderContent = () => {
@@ -791,7 +1278,9 @@ const WebMonitoringApp = ({ user }) => {
                 );
             case 'transaksi':
                 return (
-                    <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="space-y-6">
+                        {/* Container untuk Table Transaksi */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
                                 <span className="text-2xl mr-2">💳</span>
@@ -974,6 +1463,47 @@ const WebMonitoringApp = ({ user }) => {
                                 )}
                             </div>
                         )}
+                        </div>
+
+                        {/* Container untuk Status Chart */}
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                                    <span className="text-2xl mr-2">📊</span>
+                                    Visualisasi Status Transaksi
+                                </h2>
+                            </div>
+
+                            {statusChartLoading ? (
+                                <div className="flex items-center justify-center h-64">
+                                    <div className="text-gray-500">Loading chart data...</div>
+                                </div>
+                            ) : (
+                                <div className="h-auto">
+                                    {renderStatusChart()}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Container untuk Top Active Warehouses */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                                    <span className="text-2xl mr-2">🏭</span>
+                                    Top Active Warehouses
+                                </h2>
+                            </div>
+
+                            {warehouseLoading ? (
+                                <div className="flex items-center justify-center h-64">
+                                    <div className="text-gray-500">Loading warehouse data...</div>
+                                </div>
+                            ) : (
+                                <div className="h-auto">
+                                    {renderTopWarehouses()}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
             default:

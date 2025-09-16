@@ -504,11 +504,17 @@ class DashboardController extends Controller
                 $perPage = $maxPerPage;
             }
             
+            // Create a subquery for items with MIN(id) to avoid correlated subquery in JOIN
+            $itemsSubquery = DB::table('items')
+                ->select('Part Number', DB::raw('MIN(id) as min_id'))
+                ->groupBy('Part Number');
+
             $query = Dataset40200::select(
                 'dataset40200.id',
                 'dataset40200.nomor_dokumen',
+                'transaksi1.bentuk',
                 'dataset40200.part_number',
-                'dataset2.Nama Barang as nama_barang',
+                DB::raw('COALESCE(items.`Nama Barang`, dataset2.`Nama Barang`) as nama_barang'),
                 'dataset40200.dari_gudang',
                 'dataset40200.ke_gudang',
                 'dataset40200.dipasang_di_no_reg_sista',
@@ -517,6 +523,14 @@ class DashboardController extends Controller
                 'dataset40200.status_pengiriman',
                 'dataset40200.site'
             )
+            ->leftJoin('transaksi1', 'dataset40200.nomor_dokumen', '=', 'transaksi1.nomer_dokumen')
+            ->leftJoinSub($itemsSubquery, 'items_min', function($join) {
+                $join->on('dataset40200.part_number', '=', 'items_min.Part Number');
+            })
+            ->leftJoin('items', function($join) {
+                $join->on('items_min.Part Number', '=', 'items.Part Number')
+                     ->on('items_min.min_id', '=', 'items.id');
+            })
             ->leftJoin('dataset2', 'dataset40200.part_number', '=', 'dataset2.Part Number');
             
             // Terapkan filter jika bukan 'all'
@@ -586,6 +600,278 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error fetching transaction gudang list',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getStatusStatistics(Request $request)
+    {
+        try {
+            $filter = $request->get('filter', 'all');
+            
+            // Build base query
+            $baseQuery = Dataset40200::query();
+            
+            // Apply filter if not 'all'
+            if ($filter && $filter !== 'all') {
+                $baseQuery->where(function($q) use ($filter) {
+                    $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('ke_gudang', 'LIKE', '%' . $filter . '%');
+                });
+            }
+
+            // Get statistics for each status type
+            $statusPermintaan = (clone $baseQuery)
+                ->select('status_permintaan', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('status_permintaan')
+                ->where('status_permintaan', '!=', '')
+                ->groupBy('status_permintaan')
+                ->get();
+
+            $statusPenerimaan = (clone $baseQuery)
+                ->select('status_penerimaan', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('status_penerimaan')
+                ->where('status_penerimaan', '!=', '')
+                ->groupBy('status_penerimaan')
+                ->get();
+
+            $statusPengiriman = (clone $baseQuery)
+                ->select('status_pengiriman', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('status_pengiriman')
+                ->where('status_pengiriman', '!=', '')
+                ->groupBy('status_pengiriman')
+                ->get();
+
+            return response()->json([
+                'status_permintaan' => $statusPermintaan->map(function($item) {
+                    return [
+                        'label' => $item->status_permintaan,
+                        'count' => $item->count
+                    ];
+                }),
+                'status_penerimaan' => $statusPenerimaan->map(function($item) {
+                    return [
+                        'label' => $item->status_penerimaan,
+                        'count' => $item->count
+                    ];
+                }),
+                'status_pengiriman' => $statusPengiriman->map(function($item) {
+                    return [
+                        'label' => $item->status_pengiriman,
+                        'count' => $item->count
+                    ];
+                }),
+                'filter' => $filter
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching status statistics',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getStatusDetail(Request $request)
+    {
+        try {
+            $filter = $request->get('filter', 'all');
+            $statusType = $request->get('status_type'); // 'status_permintaan', 'status_penerimaan', 'status_pengiriman'
+            $statusValue = $request->get('status_value'); // e.g., 'sedang di proses'
+            
+            if (!$statusType || !$statusValue) {
+                return response()->json([
+                    'error' => 'Missing required parameters: status_type and status_value'
+                ], 400);
+            }
+
+            // Build base query
+            $baseQuery = Dataset40200::query();
+            
+            // Apply filter if not 'all'
+            if ($filter && $filter !== 'all') {
+                $baseQuery->where(function($q) use ($filter) {
+                    $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('ke_gudang', 'LIKE', '%' . $filter . '%');
+                });
+            }
+
+            // Filter by specific status
+            $baseQuery->where($statusType, $statusValue);
+
+            // Get breakdown by warehouse depending on status type
+            $warehouseBreakdown = [];
+            
+            if ($statusType === 'status_permintaan') {
+                // For permintaan, show from which gudang the requests are coming
+                $warehouseBreakdown = $baseQuery
+                    ->select('dari_gudang as gudang', DB::raw('COUNT(*) as count'))
+                    ->whereNotNull('dari_gudang')
+                    ->where('dari_gudang', '!=', '')
+                    ->where('dari_gudang', '!=', ' ')
+                    ->groupBy('dari_gudang')
+                    ->orderBy('count', 'desc')
+                    ->get()
+                    ->map(function($item) {
+                        return [
+                            'gudang' => trim($item->gudang),
+                            'count' => $item->count,
+                            'description' => 'permintaan dari gudang ini'
+                        ];
+                    });
+            } elseif ($statusType === 'status_penerimaan') {
+                // For penerimaan, show to which gudang items are being received
+                $warehouseBreakdown = $baseQuery
+                    ->select('ke_gudang as gudang', DB::raw('COUNT(*) as count'))
+                    ->whereNotNull('ke_gudang')
+                    ->where('ke_gudang', '!=', '')
+                    ->where('ke_gudang', '!=', ' ')
+                    ->groupBy('ke_gudang')
+                    ->orderBy('count', 'desc')
+                    ->get()
+                    ->map(function($item) {
+                        return [
+                            'gudang' => trim($item->gudang),
+                            'count' => $item->count,
+                            'description' => 'penerimaan ke gudang ini'
+                        ];
+                    });
+            } elseif ($statusType === 'status_pengiriman') {
+                // For pengiriman, show from which gudang items are being sent
+                $warehouseBreakdown = $baseQuery
+                    ->select('dari_gudang as gudang', DB::raw('COUNT(*) as count'))
+                    ->whereNotNull('dari_gudang')
+                    ->where('dari_gudang', '!=', '')
+                    ->where('dari_gudang', '!=', ' ')
+                    ->groupBy('dari_gudang')
+                    ->orderBy('count', 'desc')
+                    ->get()
+                    ->map(function($item) {
+                        return [
+                            'gudang' => trim($item->gudang),
+                            'count' => $item->count,
+                            'description' => 'pengiriman dari gudang ini'
+                        ];
+                    });
+            }
+
+            $totalCount = $warehouseBreakdown->sum('count');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'status_type' => $statusType,
+                    'status_value' => $statusValue,
+                    'total_count' => $totalCount,
+                    'warehouse_breakdown' => $warehouseBreakdown->values()->toArray(),
+                    'filter' => $filter
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching status detail',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTopActiveWarehouses(Request $request)
+    {
+        try {
+            $limit = $request->get('limit', 10);
+            $filter = $request->get('filter', 'all');
+            
+            // Build base query
+            $baseQuery = Dataset40200::query();
+            
+            // Apply filter if not 'all'
+            if ($filter && $filter !== 'all') {
+                $baseQuery->where(function($q) use ($filter) {
+                    $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('ke_gudang', 'LIKE', '%' . $filter . '%');
+                });
+            }
+
+            // Get top active warehouses as "dari_gudang" (outgoing)
+            $topFromWarehouses = (clone $baseQuery)
+                ->select('dari_gudang as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('dari_gudang')
+                ->where('dari_gudang', '!=', '')
+                ->where('dari_gudang', '!=', ' ')
+                ->groupBy('dari_gudang')
+                ->orderBy('count', 'desc')
+                ->limit($limit)
+                ->get();
+
+            // Get top active warehouses as "ke_gudang" (incoming)
+            $topToWarehouses = (clone $baseQuery)
+                ->select('ke_gudang as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('ke_gudang')
+                ->where('ke_gudang', '!=', '')
+                ->where('ke_gudang', '!=', ' ')
+                ->groupBy('ke_gudang')
+                ->orderBy('count', 'desc')
+                ->limit($limit)
+                ->get();
+
+            // Combine and aggregate both directions
+            $warehouseActivity = [];
+            
+            // Add outgoing transactions
+            foreach ($topFromWarehouses as $warehouse) {
+                $name = trim($warehouse->warehouse);
+                if (!isset($warehouseActivity[$name])) {
+                    $warehouseActivity[$name] = [
+                        'warehouse' => $name,
+                        'outgoing' => 0,
+                        'incoming' => 0,
+                        'total' => 0
+                    ];
+                }
+                $warehouseActivity[$name]['outgoing'] = $warehouse->count;
+                $warehouseActivity[$name]['total'] += $warehouse->count;
+            }
+
+            // Add incoming transactions
+            foreach ($topToWarehouses as $warehouse) {
+                $name = trim($warehouse->warehouse);
+                if (!isset($warehouseActivity[$name])) {
+                    $warehouseActivity[$name] = [
+                        'warehouse' => $name,
+                        'outgoing' => 0,
+                        'incoming' => 0,
+                        'total' => 0
+                    ];
+                }
+                $warehouseActivity[$name]['incoming'] = $warehouse->count;
+                $warehouseActivity[$name]['total'] += $warehouse->count;
+            }
+
+            // Sort by total activity and take top N
+            $topWarehouses = collect($warehouseActivity)
+                ->sortByDesc('total')
+                ->take($limit)
+                ->map(function ($warehouse) {
+                    return [
+                        'nama_gudang' => $warehouse['warehouse'],
+                        'outgoing_count' => $warehouse['outgoing'],
+                        'incoming_count' => $warehouse['incoming'],
+                        'total_activity' => $warehouse['total']
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => $topWarehouses,
+                'limit' => $limit,
+                'filter' => $filter,
+                'total_warehouses' => count($warehouseActivity)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching top active warehouses',
                 'message' => $e->getMessage()
             ], 500);
         }

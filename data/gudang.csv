@@ -1,33 +1,33 @@
 ﻿Location;Description;Type;Inventory Owner;Name;Site
 GD DENMA AAU;Gudang Denma Aau;STOREROOM;;;AAU
-GPD 10;GPD Depo Pemeliharaan 10;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
-GPD 10 GD 01;GPD Depo Pemeliharaan 10 Gudang 01;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
-GPD 10 GD 02;GPD Depo Pemeliharaan 10 Gudang 02;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
-GPD 10 GD 03;GPD Depo Pemeliharaan 10 Gudang 03;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
-GPD 10 GD 04;GPD Depo Pemeliharaan 10 Gudang 04;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
-GPD 10 GD 05;GPD Depo Pemeliharaan 10 Gudang 05;STOREROOM;11619201545236;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10;GPD Depo Pemeliharaan 10;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10 GD 01;GPD Depo Pemeliharaan 10 Gudang 01;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10 GD 02;GPD Depo Pemeliharaan 10 Gudang 02;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10 GD 03;GPD Depo Pemeliharaan 10 Gudang 03;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10 GD 04;GPD Depo Pemeliharaan 10 Gudang 04;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
+GPD 10 GD 05;GPD Depo Pemeliharaan 10 Gudang 05;STOREROOM;1,16192E+13;Bambang Putut Wijanarko, S.T.Han.;DEPO 10
 P3 DEPO 10;P3 DEPO 10;STOREROOM;513939;Aan Heryawan;DEPO 10
 TB SATHAR 11;TB Satuan Pemeliharaan 11;STOREROOM;531721;Anggi Andrian;DEPO 10
-TB SATHAR 12;TB Satuan Pemeliharaan 12;STOREROOM;21919504549796;Aji Muhammad Akbar, S.Si.;DEPO 10
-TB SATHAR 13;TB Satuan Pemeliharaan 13;STOREROOM;21618903545282;Anggara Prasandya Baradita, S.T.;DEPO 10
-TB SATHAR 14;TB Satuan Pemeliharaan 14;STOREROOM;3122103980555279;Willy Ary Werdhana, S.Tr.Han;DEPO 10
-TB SATHAR 15;TB Satuan Pemeliharaan 15;STOREROOM;12019707551655;Muhammad Awaluddin Suwandi, S.Tr.(Han);DEPO 10
+TB SATHAR 12;TB Satuan Pemeliharaan 12;STOREROOM;2,19195E+13;Aji Muhammad Akbar, S.Si.;DEPO 10
+TB SATHAR 13;TB Satuan Pemeliharaan 13;STOREROOM;2,16189E+13;Anggara Prasandya Baradita, S.T.;DEPO 10
+TB SATHAR 14;TB Satuan Pemeliharaan 14;STOREROOM;3,1221E+15;Willy Ary Werdhana, S.Tr.Han;DEPO 10
+TB SATHAR 15;TB Satuan Pemeliharaan 15;STOREROOM;1,20197E+13;Muhammad Awaluddin Suwandi, S.Tr.(Han);DEPO 10
 TB SATHAR 16;TB Satuan Pemeliharaan 16;STOREROOM;532536;Nanang Setiawan;DEPO 10
 GPD 20;GPD Depo Pemeliharaan 20;STOREROOM;516831;Supriyono;DEPO 20
 P3 DEPO 20;P3 DEPO 20;STOREROOM;514769;Widhy Nugroho R.;DEPO 20
 TB SATHAR 21;TB Satuan Pemeliharaan 21;STOREROOM;541188;Jerry Jati Gantara;DEPO 20
 TB SATHAR 22;TB Satuan Pemeliharaan 22;STOREROOM;526574;Amin Mujiono;DEPO 20
-TB SATHAR 23;TB Satuan Pemeliharaan 23;STOREROOM;21719201546630;Hadyan Andhika Perdana, S.T.;DEPO 20
+TB SATHAR 23;TB Satuan Pemeliharaan 23;STOREROOM;2,17192E+13;Hadyan Andhika Perdana, S.T.;DEPO 20
 TB SATHAR 24;TB Satuan Pemeliharaan 24;STOREROOM;528804;Setyawan Budi Samodro;DEPO 20
 GPD 30;GPD Depo Pemeliharaan 30;STOREROOM;523701;Agus Dariyanto;DEPO 30
 P3 DEPO 30;P3 DEPO 30;STOREROOM;517095;Budi Wicahyo;DEPO 30
-TB SATHAR 31;TB Satuan Pemeliharaan 31;STOREROOM;3222104980555294;R. Fernandes Armando Delexsi,;DEPO 30
+TB SATHAR 31;TB Satuan Pemeliharaan 31;STOREROOM;3,2221E+15;R. Fernandes Armando Delexsi,;DEPO 30
 TB SATHAR 32;TB Satuan Pemeliharaan 32;STOREROOM;535188;Mohamad Afif Wahyu S.;DEPO 30
 TB SATHAR 33;TB Satuan Pemeliharaan 33;STOREROOM;531847;Hendriyanto;DEPO 30
 GPD 40;GPD Depo Pemeliharaan 40;STOREROOM;519359;Agus Eko Dwi Santoso;DEPO 40
 P3 DEPO 40;P3 DEPO 40;STOREROOM;511961;Budiyono;DEPO 40
 TB SATHAR 41;TB Satuan Pemeliharaan 41;STOREROOM;530086;Sandy Yusdiansyah;DEPO 40
-TB SATHAR 42;TB Satuan Pemeliharaan 42;STOREROOM;3122207990555208;Ditha Sekar Arum, S.Tr.Han;DEPO 40
+TB SATHAR 42;TB Satuan Pemeliharaan 42;STOREROOM;3,12221E+15;Ditha Sekar Arum, S.Tr.Han;DEPO 40
 TB SATHAR 43;TB Satuan Pemeliharaan 43;STOREROOM;524928;Anang Arifianto;DEPO 40
 GPD 50;GPD Depo Pemeliharaan 50;STOREROOM;515000;Agus Wibowo;DEPO 50
 GPD 50 GD 01;GPD Depo Pemeliharaan 50 Gudang 01;STOREROOM;515000;Agus Wibowo;DEPO 50
@@ -87,7 +87,7 @@ GPD 80;Gudang Depo Pemeliharaan 80;STOREROOM;519671;Sugeng Budi Susanto;DE
 P3 DEPO 80;P3 DEPO 80;STOREROOM;517233;Agung Sudaryanto;DEPO 80
 TB SATHAR 81;Titik Bekal Satuan Pemeliharaan 81;STOREROOM;527821;Untung Wahyono;DEPO 80
 TB SATHAR 82;Titik Bekal Satuan Pemeliharaan 82;STOREROOM;525312;RudI Evianto;DEPO 80
-TB SATHAR 83;Titik Bekal Satuan Pemeliharaan 83;STOREROOM;42010101550475;Muhammad Teddy Suwadi;DEPO 80
+TB SATHAR 83;Titik Bekal Satuan Pemeliharaan 83;STOREROOM;4,20101E+13;Muhammad Teddy Suwadi;DEPO 80
 GPD 90;GPD Depo Pemeliharaan 90;STOREROOM;;;DEPO 90
 P3 DEPO 90;P3 DEPO 90;STOREROOM;;;DEPO 90
 TB SATHAR 91;TB Satuan Pemeliharaan 91;STOREROOM;;;DEPO 90
@@ -174,10 +174,10 @@ GPL ABD GD 04A;GPL Lanud Abdulrachman Saleh Gudang 4A;STOREROOM;535871;J
 GPL ABD GD 04B;GPL Lanud Abdulrachman Saleh Gudang 4B;STOREROOM;535871;Josi Kristanto, S.Sos.;LANUD ABD
 GPL ABD GD 06;GPL Lanud Abdulrachman Saleh Gudang 6;STOREROOM;535871;Josi Kristanto, S.Sos.;LANUD ABD
 GPL ABD GD 06B;GPL Lanud Abdulrachman Saleh Gudang 6;STOREROOM;535871;Josi Kristanto, S.Sos.;LANUD ABD
-TB SKADUD 21;TB Skadron Udara 21;STOREROOM;3222106960555296;Bima Dwiputra;LANUD ABD
-TB SKADUD 32;TB Skadron Udara 32;STOREROOM;3123105000557343;Imam Bazuri OK, S.Tr.Han.;LANUD ABD
-TB SKADUD 4;TB Skadron Udara 4;STOREROOM;11719302546572;Febry D. Hotman Simbolon, S.Tr.(Han);LANUD ABD
-TB SKATEK 022;TB Skadron Teknik 022;STOREROOM;3121104970553035;Anggara Adhi Wijaya, S. Tr. Han;LANUD ABD
+TB SKADUD 21;TB Skadron Udara 21;STOREROOM;3,22211E+15;Bima Dwiputra;LANUD ABD
+TB SKADUD 32;TB Skadron Udara 32;STOREROOM;3,12311E+15;Imam Bazuri OK, S.Tr.Han.;LANUD ABD
+TB SKADUD 4;TB Skadron Udara 4;STOREROOM;1,17193E+13;Febry D. Hotman Simbolon, S.Tr.(Han);LANUD ABD
+TB SKATEK 022;TB Skadron Teknik 022;STOREROOM;3,1211E+15;Anggara Adhi Wijaya, S. Tr. Han;LANUD ABD
 GPL ADI;GPL Lanud Adi Sucipto;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
 GPL ADI GD 02;GPL Lanud Adi Sucipto Gudang 2;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
 GPL ADI GD 03;GPL Lanud Adi Sucipto Gudang 3;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
@@ -186,27 +186,27 @@ GPL ADI GD 05;GPL Lanud Adi Sucipto Gudang 5;STOREROOM;533691;Ismoyo, S
 GPL ADI GD 06;GPL Lanud Adi Sucipto Gudang 6;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
 GPL ADI GD 07;GPL Lanud Adi Sucipto Gudang 7;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
 GPL ADI GD 08;GPL Lanud Adi Sucipto Gudang 8;STOREROOM;533691;Ismoyo, S.T., M.Sc.;LANUD ADI
-TB SKADIK 101;TB SKADIK 101;STOREROOM;31241120005595;Bonifasius Vendry Setiawan;LANUD ADI
-TB SKADIK 102;TB SKADIK 102;STOREROOM;3122111980555213;Imam Wahyu Utomo;LANUD ADI
+TB SKADIK 101;TB SKADIK 101;STOREROOM;3,12411E+13;Bonifasius Vendry Setiawan;LANUD ADI
+TB SKADIK 102;TB SKADIK 102;STOREROOM;3,12211E+15;Imam Wahyu Utomo;LANUD ADI
 TB SKADIK 104;TB SKADIK 104;STOREROOM;522433;Siswanto;LANUD ADI
 TB SKATEK 043;TB Skadron Teknik 043;STOREROOM;530078;Cahyo Hastariyono;LANUD ADI
-GPL ANB;GPL Lanud Anang Busra;STOREROOM;3523106030558112;Ariq Burhantoro;LANUD ANB
+GPL ANB;GPL Lanud Anang Busra;STOREROOM;3,52311E+15;Ariq Burhantoro;LANUD ANB
 GPL ASH;GPL Lanud Haji Lanud Abdullah Sanusi Hanandjoeddin;STOREROOM;539310;Zainal Arifin;LANUD ASH
 GPL ATS;GPL Lanud Atang Sendjaja;STOREROOM;530366;Sudianto Tambunan, S.E.;LANUD ATS
 GPL ATS GD 01;GPL Lanud Atang Sendjaja Gudang 1;STOREROOM;517136;Haris Subagyo;LANUD ATS
 GPL ATS GD 02;GPL Lanud Atang Sendjaja Gudang 2;STOREROOM;530366;Sudianto Tambunan, S.E.;LANUD ATS
 GPL ATS GD 03;GPL Lanud Atang Sendjaja Gudang 3;STOREROOM;530366;Sudianto Tambunan, S.E.;LANUD ATS
 GPL ATS GD 04;GPL Lanud Atang Sendjaja Gudang 4;STOREROOM;530366;Sudianto Tambunan, S.E.;LANUD ATS
-TB SKADUD 6;TB Skadron Udara 6;STOREROOM;3121112970553012;Nando Rabbuni Sinulingga, S.Tr.Han.;LANUD ATS
-TB SKADUD 8;TB Skadron Udara 8;STOREROOM;3121209990552990;Citra Puspita Pramesti, S.Tr.Han.;LANUD ATS
-TB SKATEK 024;TB Skadron Teknik 024;STOREROOM;3121107980552984;Tutuko Digdyo Wahyu Wicaksono,;LANUD ATS
+TB SKADUD 6;TB Skadron Udara 6;STOREROOM;3,12111E+15;Nando Rabbuni Sinulingga, S.Tr.Han.;LANUD ATS
+TB SKADUD 8;TB Skadron Udara 8;STOREROOM;3,12121E+15;Citra Puspita Pramesti, S.Tr.Han.;LANUD ATS
+TB SKATEK 024;TB Skadron Teknik 024;STOREROOM;3,12111E+15;Tutuko Digdyo Wahyu Wicaksono,;LANUD ATS
 GPL BNY;GPL Lanud Pangeran M. Bun Yamin;STOREROOM;536582;Febry Jhon David Nainggolan;LANUD BNY
 GPL DMA;GPL Lanud Johanes Abraham Dimara;STOREROOM;513935;Maulana Salehudin, S.E;LANUD DMA
-GPL DMB;GPL Lanud Dhomber;STOREROOM;42019910551284;Muhamad Priyo Ambodo Sarjono;LANUD DMB
-GPL DMN;GPL Lanud Dominicus Dumatubun;STOREROOM;3523101030558116;Raden Rangga Satya S.;LANUD DMN
-GPL DWT;GPL Lanud Ignatius Dewanto;STOREROOM;3523108030558107;Rendra Syukur Susilo Putro;LANUD DWT
-GPL ELI;GPL Lanud El Tari;STOREROOM;3523107040556875;Frenggo Febrian Saputra;LANUD ELI
-GPL HAD;GPL Lanud Harry Hadisoemantri;STOREROOM;3523112020558113;Rony Sutandio;LANUD HAD
+GPL DMB;GPL Lanud Dhomber;STOREROOM;4,20199E+13;Muhamad Priyo Ambodo Sarjono;LANUD DMB
+GPL DMN;GPL Lanud Dominicus Dumatubun;STOREROOM;3,5231E+15;Raden Rangga Satya S.;LANUD DMN
+GPL DWT;GPL Lanud Ignatius Dewanto;STOREROOM;3,52311E+15;Rendra Syukur Susilo Putro;LANUD DWT
+GPL ELI;GPL Lanud El Tari;STOREROOM;3,52311E+15;Frenggo Febrian Saputra;LANUD ELI
+GPL HAD;GPL Lanud Harry Hadisoemantri;STOREROOM;3,52311E+15;Rony Sutandio;LANUD HAD
 GPL HLM;GPL Lanud Halim P.K.;STOREROOM;535095;Raditya Widyaswara;LANUD HLM
 GPL HLM GD 01;GPL Lanud Halim P.K. Gudang 1;STOREROOM;535095;Raditya Widyaswara;LANUD HLM
 GPL HLM GD 02;GPL Lanud Halim P.K. Gudang 2;STOREROOM;535095;Raditya Widyaswara;LANUD HLM
@@ -232,14 +232,14 @@ GPL HND GD 03;GPL Lanud Hasanuddin Gudang 03;STOREROOM;535078;Milbarano 
 GPL HND GD 05;GPL Lanud Hasanuddin Gudang 05;STOREROOM;535078;Milbarano Mahulae, S.E.;LANUD HND
 GPL HND GD 06;GPL Lanud Hasanuddin Gudang 06;STOREROOM;535078;Milbarano Mahulae, S.E.;LANUD HND
 GPL HND GD 07;GPL Lanud Hasanuddin Gudang 07;STOREROOM;535078;Milbarano Mahulae, S.E.;LANUD HND
-TB SKADUD 11;TB Skadron Udara 11;STOREROOM;3124104000559933;Gustino Crisliandi Nur, S.Tr.H;LANUD HND
-TB SKADUD 33;TB Skadron Udara 33;STOREROOM;3124104020559912;Kevin Fidelis Sibarani, S.Tr.H;LANUD HND
-TB SKADUD 5;TB Skadron Udara 5;STOREROOM;3522102020554831;Gandhi Arya Nugroho;LANUD HND
-TB SKATEK 044;TB Skadron Teknik 044;STOREROOM;3123110990557402;Fahmi Budiwan, S.Tr.Han;LANUD HND
-GPL DMB;GPL Lanud Dhomber;STOREROOM;42019910551284;Muhamad Priyo Ambodo Sarjono;LANUD HNM
+TB SKADUD 11;TB Skadron Udara 11;STOREROOM;3,1241E+15;Gustino Crisliandi Nur, S.Tr.H;LANUD HND
+TB SKADUD 33;TB Skadron Udara 33;STOREROOM;3,1241E+15;Kevin Fidelis Sibarani, S.Tr.H;LANUD HND
+TB SKADUD 5;TB Skadron Udara 5;STOREROOM;3,5221E+15;Gandhi Arya Nugroho;LANUD HND
+TB SKATEK 044;TB Skadron Teknik 044;STOREROOM;3,12311E+15;Fahmi Budiwan, S.Tr.Han;LANUD HND
+GPL DMB;GPL Lanud Dhomber;STOREROOM;4,20199E+13;Muhamad Priyo Ambodo Sarjono;LANUD HNM
 GPL HNM;GPL Lanud Hang Nadim;STOREROOM;519661;Prapto Sudarsono;LANUD HNM
 GPL HSN;;STOREROOM;516583;Shodiq Anhari;LANUD HSN
-GPL IKR;GPL Lanud Iskandar;STOREROOM;3721103000553373;Raysal Agung;LANUD IKR
+GPL IKR;GPL Lanud Iskandar;STOREROOM;3,7211E+15;Raysal Agung;LANUD IKR
 GPL IWJ;GPL Lanud Iswahjudi;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
 GPL IWJ GD 01;GPL Lanud Iswahjudi 01;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
 GPL IWJ GD 02;GPL Lanud Iswahjudi 02;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
@@ -257,21 +257,21 @@ GPL IWJ GD 14;GPL Lanud Iswahjudi 14;STOREROOM;525806;Priyono , S.T., M
 GPL IWJ GD 16;GPL Lanud Iswahjudi 16;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
 GPL IWJ GD 17;GPL Lanud Iswahjudi 17;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
 GPL IWJ GD 18;GPL Lanud Iswahjudi 18;STOREROOM;525806;Priyono , S.T., M.M;LANUD IWJ
-TB SKADUD 14;TB Skadron Udara 14;STOREROOM;3123108010557374;Fajar Rahmadi Wira Faiz;LANUD IWJ
-TB SKADUD 15;TB Skadron Udara 15;STOREROOM;3122109980555270;Fariz Habib Alfaridzi;LANUD IWJ
-TB SKADUD 3;TB Skadron Udara 3;STOREROOM;3124104020559983;Muhammad Aditya Rizki, S.Tr.Ha;LANUD IWJ
-TB SKATEK 042;TB Skadron Teknik 042;STOREROOM;11919610549930;Eka Rachmadika Saputra,S.Tr.(Han);LANUD IWJ
+TB SKADUD 14;TB Skadron Udara 14;STOREROOM;3,12311E+15;Fajar Rahmadi Wira Faiz;LANUD IWJ
+TB SKADUD 15;TB Skadron Udara 15;STOREROOM;3,12211E+15;Fariz Habib Alfaridzi;LANUD IWJ
+TB SKADUD 3;TB Skadron Udara 3;STOREROOM;3,1241E+15;Muhammad Aditya Rizki, S.Tr.Ha;LANUD IWJ
+TB SKATEK 042;TB Skadron Teknik 042;STOREROOM;1,19196E+13;Eka Rachmadika Saputra,S.Tr.(Han);LANUD IWJ
 GPL HLO;GPL Lanud HLO;STOREROOM;528887;Hendri Apriadi, S.E.;LANUD JBS
 GPL JBS;GPL Lanud Jenderal Besar Soedirman;STOREROOM;530953;Tri Purwanto;LANUD JBS
 GPL LWM;GPL Lanud Leo Wattimena;STOREROOM;536668;Infantri Hutabarat;LANUD LWM
 GPL MNA;GPL Lanud Manuhua;STOREROOM;513911;Seno Dwiyanto;LANUD MNA
 GPL HLO;GPL Lanud Halu Oleo;STOREROOM;528887;Hendri Apriadi, S.E.;LANUD MUL
-GPL ML;GPL Lanud Muljono;STOREROOM;21618903545282;Anggara Prasandya Baradita, S.T.;LANUD MUL
+GPL ML;GPL Lanud Muljono;STOREROOM;2,16189E+13;Anggara Prasandya Baradita, S.T.;LANUD MUL
 GPL MUS;GPL Lanud Maimun Saleh;STOREROOM;536609;Novia Prasetyawan;LANUD MUS
-GPL PTM;GPL Lanud Pattimura;STOREROOM;3522102030554873;Mirza Dicky Ambada;LANUD PTM
-GPL RAI;GPL Lanud I Gusti Ngurah Rai;STOREROOM;11819503548294;Indra Sukmana, S.Tr.(Han);LANUD RAI
+GPL PTM;GPL Lanud Pattimura;STOREROOM;3,5221E+15;Mirza Dicky Ambada;LANUD PTM
+GPL RAI;GPL Lanud I Gusti Ngurah Rai;STOREROOM;1,18195E+13;Indra Sukmana, S.Tr.(Han);LANUD RAI
 GPL RHF;GPL Lanud Raja Haji Fisabilillah;STOREROOM;523213;Suwandi;LANUD RHF
-GPL RSA;GPL Lanud Raden Sadjad;STOREROOM;3523108020558108;Naufal Bijak Sono Putra Utama;LANUD RSA
+GPL RSA;GPL Lanud Raden Sadjad;STOREROOM;3,52311E+15;Naufal Bijak Sono Putra Utama;LANUD RSA
 GPL RSN;GPL Lanud Roesmin Nurjadin;STOREROOM;522676;Benevis, S.E.;LANUD RSN
 GPL RSN GD 01;GPL Lanud Roesmin Nurjadin Gudang 01;STOREROOM;522676;Benevis, S.E.;LANUD RSN
 GPL RSN GD 02;GPL Lanud Roesmin Nurjadin Gudang 02;STOREROOM;522676;Benevis, S.E.;LANUD RSN
@@ -279,29 +279,29 @@ GPL RSN GD 03;GPL Lanud Roesmin Nurjadin Gudang 03;STOREROOM;522676;Bene
 GPL RSN GD 04;GPL Lanud Roesmin Nurjadin Gudang 04;STOREROOM;522676;Benevis, S.E.;LANUD RSN
 GPL RSN GD 05;GPL Lanud Roesmin Nurjadin Gudang 05;STOREROOM;522676;Benevis, S.E.;LANUD RSN
 GPL RSN GD 06;GPL Lanud Roesmin Nurjadin Gudang 06;STOREROOM;522676;Benevis, S.E.;LANUD RSN
-TB SKADUD 12;TB Skadron Udara 12;STOREROOM;12019611551658;Endinsya Irfa Nahara, S.Tr.(Ha;LANUD RSN
-TB SKADUD 16;TB Skadron Udara 16;STOREROOM;11819307548282;Rafi Yulistiyanto, S.Tr.(Han).;LANUD RSN
+TB SKADUD 12;TB Skadron Udara 12;STOREROOM;1,20196E+13;Endinsya Irfa Nahara, S.Tr.(Ha;LANUD RSN
+TB SKADUD 16;TB Skadron Udara 16;STOREROOM;1,18193E+13;Rafi Yulistiyanto, S.Tr.(Han).;LANUD RSN
 TB SKATEK 045;TB Skadron Teknik 045;STOREROOM;544075;Mega Jatayu, S.T.Han., S.T.;LANUD RSN
 GPL SAM;GPL Lanud Syamsuddin Noor;STOREROOM;527467;Winarko;LANUD SAM
 GPL SDM;GPL Lanud Suryadarma;STOREROOM;536488;Edang Wahyu Ramdani;LANUD SDM
 GPL SDM GD 01;GPL Lanud Suryadarma Gudang 1;STOREROOM;536488;Edang Wahyu Ramdani;LANUD SDM
 GPL SDM GD 02;GPL Lanud Suryadarma Gudang 2;STOREROOM;536488;Edang Wahyu Ramdani;LANUD SDM
 TB SKADUD 7;TB Skadron Udara 7;STOREROOM;;;LANUD SDM
-GPL SIM;GPL Lanud Sultan Iskandar Muda;STOREROOM;42019811550431;Muhammad Akbaruddin;LANUD SIM
+GPL SIM;GPL Lanud Sultan Iskandar Muda;STOREROOM;4,20198E+13;Muhammad Akbaruddin;LANUD SIM
 GPL SKI;GPL Lanud Sugiri Sukani;STOREROOM;533867;Muhamad Isa Anshori;LANUD SKI
-KA GPL;Ka Gpl Lanud Muljono;STOREROOM;21618903545282;Anggara Prasandya Baradita, S.T.;LANUD SKI
+KA GPL;Ka Gpl Lanud Muljono;STOREROOM;2,16189E+13;Anggara Prasandya Baradita, S.T.;LANUD SKI
 GPL SMH;GPL Lanud Sri Mulyono Herlambang;STOREROOM;522542;Sigit Prasetyo;LANUD SMH
 GPL SPO;GPL Lanud Supadio;STOREROOM;536482;Aloysius Yogi Setiawan;LANUD SPO
 GPL SPO GD 01;GPL Lanud Supadio Gudang 01;STOREROOM;527065;Hari Setiawan,A.Md.;LANUD SPO
 GPL SPO GD 03;GPL Lanud Supadio Gudang 03;STOREROOM;527065;Hari Setiawan,A.Md.;LANUD SPO
 GPL SPO GD 04;GPL Lanud Supadio Gudang 04;STOREROOM;527065;Hari Setiawan,A.Md.;LANUD SPO
-TB SKADUD 1;TB Skadron Udara 1;STOREROOM;3223102970557422;Muhammad Reza Ramadhan, S.Log.;LANUD SPO
-TB SKADUD 51;TB Skadron Udara 51;STOREROOM;3123103000557381;Dicka Chandra Dwi Antariksa, S;LANUD SPO
+TB SKADUD 1;TB Skadron Udara 1;STOREROOM;3,2231E+15;Muhammad Reza Ramadhan, S.Log.;LANUD SPO
+TB SKADUD 51;TB Skadron Udara 51;STOREROOM;3,1231E+15;Dicka Chandra Dwi Antariksa, S;LANUD SPO
 GPL SPR;GPL Lanud Silas Papare;STOREROOM;519394;Winarko, S.Sos.;LANUD SPR
 GPL SRI;GPL Lanud Sam Ratulangi;STOREROOM;517972;Himawan Eko Soesanto;LANUD SRI
-GPL SUT;GPL Lanud Sutan Sjahrir;STOREROOM;42010107550518;Erwin Kuncoro;LANUD SUT
-GPL SWO;GPL Lanud Soewondo;STOREROOM;41819905547266;Rahmad Wijaya;LANUD SWO
-GPLSWO;;STOREROOM;41819905547266;Rahmad Wijaya;LANUD SWO
+GPL SUT;GPL Lanud Sutan Sjahrir;STOREROOM;4,20101E+13;Erwin Kuncoro;LANUD SUT
+GPL SWO;GPL Lanud Soewondo;STOREROOM;4,18199E+13;Rahmad Wijaya;LANUD SWO
+GPLSWO;;STOREROOM;4,18199E+13;Rahmad Wijaya;LANUD SWO
 GPL WIR;GPL Lanud Wiriadinata;STOREROOM;529112;Rudi Joko Santoso;LANUD WIR
 GPL YKU;GPL Lanud Yohanis Kapiyau;STOREROOM;531516;Romerick Onthoni B.;LANUD YKU
 GPL ZAM;GPL Lanud Tuan Guru Kiyai Haji Muhammad Zainudin Abdul Madjid;STOREROOM;521716;Abdarwis;LANUD ZAM

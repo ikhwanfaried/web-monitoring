@@ -24,3 +24,6 @@ Route::get('/stock-chart', [DashboardController::class, 'getStockChart']);
 Route::post('/users', [DashboardController::class, 'createUser']);
 Route::get('/transaksi', [DashboardController::class, 'getTransaksi']);
 Route::get('/transaksi-gudang-list', [DashboardController::class, 'getTransaksiGudangList']);
+Route::get('/status-statistics', [DashboardController::class, 'getStatusStatistics']);
+Route::get('/status-detail', [DashboardController::class, 'getStatusDetail']);
+Route::get('/top-active-warehouses', [DashboardController::class, 'getTopActiveWarehouses']);
