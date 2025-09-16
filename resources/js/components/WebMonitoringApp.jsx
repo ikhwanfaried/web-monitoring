@@ -68,6 +68,12 @@ const WebMonitoringApp = ({ user }) => {
     const [hoveredStatus, setHoveredStatus] = useState(null);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, side: 'right' });
 
+    // State untuk dark mode
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const saved = localStorage.getItem('darkMode');
+        return saved ? JSON.parse(saved) : false;
+    });
+
     // State untuk modal add user
     const [showAddUserModal, setShowAddUserModal] = useState(false);
     const [addUserForm, setAddUserForm] = useState({
@@ -90,6 +96,48 @@ const WebMonitoringApp = ({ user }) => {
     const handleLogout = () => {
         window.location.reload();
     };
+
+    const toggleDarkMode = () => {
+        const newDarkMode = !isDarkMode;
+        setIsDarkMode(newDarkMode);
+        localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
+        
+        // Apply to document element for global styles
+        if (newDarkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    // Helper function for dark mode classes
+    const getCardClasses = (additionalClasses = '') => {
+        const baseClasses = 'rounded-lg shadow-md transition-all duration-300';
+        const bgClasses = isDarkMode 
+            ? 'bg-gray-800 border-2 border-blue-400 glow-blue' 
+            : 'bg-white border border-gray-200';
+        return `${baseClasses} ${bgClasses} ${additionalClasses}`;
+    };
+
+    const getTextClasses = (type = 'primary') => {
+        if (type === 'primary') {
+            return isDarkMode ? 'text-white' : 'text-gray-900';
+        } else if (type === 'secondary') {
+            return isDarkMode ? 'text-gray-200' : 'text-gray-600';
+        } else if (type === 'muted') {
+            return isDarkMode ? 'text-gray-300' : 'text-gray-500';
+        }
+        return '';
+    };
+
+    useEffect(() => {
+        // Apply dark mode class on mount
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, []);
 
     useEffect(() => {
         // Fetch data dari Laravel API
@@ -504,7 +552,7 @@ const WebMonitoringApp = ({ user }) => {
                     '#06B6D4', // cyan-500
                     '#84CC16', // lime-500
                 ],
-                borderColor: '#ffffff',
+                borderColor: isDarkMode ? '#374151' : '#ffffff',
                 borderWidth: 2,
             }]
         };
@@ -517,6 +565,11 @@ const WebMonitoringApp = ({ user }) => {
                     display: false, // Hide default legend
                 },
                 tooltip: {
+                    backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                    titleColor: isDarkMode ? '#ffffff' : '#000000',
+                    bodyColor: isDarkMode ? '#ffffff' : '#000000',
+                    borderColor: isDarkMode ? '#6B7280' : '#e5e7eb',
+                    borderWidth: 1,
                     callbacks: {
                         label: function(context) {
                             const percentage = ((context.parsed / total) * 100).toFixed(1);
@@ -541,8 +594,8 @@ const WebMonitoringApp = ({ user }) => {
                 {/* Chart */}
                 <div className="flex-1">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{getChartTitle()}</h3>
-                        <div className="text-sm text-gray-600">
+                        <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>{getChartTitle()}</h3>
+                        <div className={`text-sm ${getTextClasses('secondary')}`}>
                             Total: {total.toLocaleString()} transaksi
                         </div>
                     </div>
@@ -554,7 +607,9 @@ const WebMonitoringApp = ({ user }) => {
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_permintaan'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                         >
                             Permintaan
@@ -564,7 +619,9 @@ const WebMonitoringApp = ({ user }) => {
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_penerimaan'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                         >
                             Penerimaan
@@ -574,7 +631,9 @@ const WebMonitoringApp = ({ user }) => {
                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_pengiriman'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                         >
                             Pengiriman
@@ -588,7 +647,7 @@ const WebMonitoringApp = ({ user }) => {
 
                 {/* Legend with Details */}
                 <div className="lg:w-80">
-                    <h4 className="text-md font-medium text-gray-900 mb-3">Detail Status</h4>
+                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
                     <div className="space-y-2">
                         {currentData.map((item, index) => {
                             const percentage = ((item.count / total) * 100).toFixed(1);
@@ -598,7 +657,11 @@ const WebMonitoringApp = ({ user }) => {
                             return (
                                 <div 
                                     key={item.label} 
-                                    className="relative flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                                    className={`relative flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
+                                        isDarkMode 
+                                            ? 'bg-gray-700 hover:bg-blue-800' 
+                                            : 'bg-gray-50 hover:bg-blue-50'
+                                    }`}
                                     onMouseEnter={(e) => {
                                         const position = calculateTooltipPosition(e);
                                         setTooltipPosition(position);
@@ -615,13 +678,13 @@ const WebMonitoringApp = ({ user }) => {
                                             className="w-4 h-4 rounded mr-3"
                                             style={{ backgroundColor }}
                                         ></div>
-                                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                                        <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>{item.label}</span>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-sm font-semibold text-gray-900">
+                                        <div className={`text-sm font-semibold ${getTextClasses('primary')}`}>
                                             {item.count.toLocaleString()}
                                         </div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className={`text-xs ${getTextClasses('muted')}`}>
                                             {percentage}%
                                         </div>
                                     </div>
@@ -629,8 +692,12 @@ const WebMonitoringApp = ({ user }) => {
                                     {/* Tooltip with detailed breakdown */}
                                     {isHovered && statusDetailData && (
                                         <div 
-                                            className={`fixed z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
+                                            className={`fixed z-50 w-80 rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
                                                 tooltipPosition.side === 'left' ? 'transform -translate-x-full' : ''
+                                            } ${
+                                                isDarkMode 
+                                                    ? 'bg-gray-800 border-2 border-blue-400 glow-blue' 
+                                                    : 'bg-white border border-gray-200'
                                             }`}
                                             style={{
                                                 left: tooltipPosition.side === 'left' 
@@ -644,52 +711,62 @@ const WebMonitoringApp = ({ user }) => {
                                             <div 
                                                 className={`absolute top-4 w-0 h-0 ${
                                                     tooltipPosition.side === 'left' 
-                                                        ? 'right-0 transform translate-x-1 border-l-8 border-l-white border-y-8 border-y-transparent' 
-                                                        : 'left-0 transform -translate-x-1 border-r-8 border-r-white border-y-8 border-y-transparent'
+                                                        ? `right-0 transform translate-x-1 border-l-8 border-y-8 border-y-transparent ${
+                                                            isDarkMode ? 'border-l-gray-800' : 'border-l-white'
+                                                        }` 
+                                                        : `left-0 transform -translate-x-1 border-r-8 border-y-8 border-y-transparent ${
+                                                            isDarkMode ? 'border-r-gray-800' : 'border-r-white'
+                                                        }`
                                                 }`}
                                                 style={{ filter: 'drop-shadow(-1px 0 1px rgba(0,0,0,0.1))' }}
                                             ></div>
                                             <div 
                                                 className={`absolute top-4 w-0 h-0 ${
                                                     tooltipPosition.side === 'left' 
-                                                        ? 'right-0 transform translate-x-0.5 border-l-8 border-l-gray-200 border-y-8 border-y-transparent' 
-                                                        : 'left-0 transform -translate-x-0.5 border-r-8 border-r-gray-200 border-y-8 border-y-transparent'
+                                                        ? `right-0 transform translate-x-0.5 border-l-8 border-y-8 border-y-transparent ${
+                                                            isDarkMode ? 'border-l-blue-400' : 'border-l-gray-200'
+                                                        }` 
+                                                        : `left-0 transform -translate-x-0.5 border-r-8 border-y-8 border-y-transparent ${
+                                                            isDarkMode ? 'border-r-blue-400' : 'border-r-gray-200'
+                                                        }`
                                                 }`}
                                             ></div>
                                             
                                             <div className="flex items-center justify-between mb-3">
-                                                <h5 className="font-semibold text-gray-900">
+                                                <h5 className={`font-semibold ${getTextClasses('primary')}`}>
                                                     {item.label}
                                                 </h5>
-                                                <span className="text-sm text-gray-500">
+                                                <span className={`text-sm ${getTextClasses('muted')}`}>
                                                     {statusDetailData.total_count.toLocaleString()} total
                                                 </span>
                                             </div>
                                             
-                                            <div className="text-xs text-gray-600 mb-2">
+                                            <div className={`text-xs ${getTextClasses('secondary')} mb-2`}>
                                                 Breakdown by warehouse:
                                             </div>
                                             
                                             <div className="max-h-48 overflow-y-auto space-y-1">
                                                 {statusDetailLoading ? (
-                                                    <div className="text-xs text-gray-500">Loading...</div>
+                                                    <div className={`text-xs ${getTextClasses('muted')}`}>Loading...</div>
                                                 ) : statusDetailData.warehouse_breakdown.slice(0, 10).map((warehouse, idx) => (
-                                                    <div key={warehouse.gudang} className="flex justify-between items-center text-xs py-1 px-2 bg-gray-50 rounded">
-                                                        <span className="text-gray-700 truncate" title={warehouse.gudang}>
+                                                    <div key={warehouse.gudang} className={`flex justify-between items-center text-xs py-1 px-2 rounded ${
+                                                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                                    }`}>
+                                                        <span className={`${getTextClasses('secondary')} truncate`} title={warehouse.gudang}>
                                                             {warehouse.gudang}
                                                         </span>
                                                         <div className="flex items-center ml-2">
-                                                            <span className="font-medium text-gray-900">
+                                                            <span className={`font-medium ${getTextClasses('primary')}`}>
                                                                 {warehouse.count.toLocaleString()}
                                                             </span>
-                                                            <span className="text-gray-500 ml-1">
+                                                            <span className={`${getTextClasses('muted')} ml-1`}>
                                                                 {warehouse.description}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 ))}
                                                 {statusDetailData.warehouse_breakdown.length > 10 && (
-                                                    <div className="text-xs text-gray-500 text-center py-1">
+                                                    <div className={`text-xs ${getTextClasses('muted')} text-center py-1`}>
                                                         ... dan {statusDetailData.warehouse_breakdown.length - 10} gudang lainnya
                                                     </div>
                                                 )}
@@ -809,28 +886,30 @@ const WebMonitoringApp = ({ user }) => {
 
                 {/* Details */}
                 <div className="lg:w-80">
-                    <h4 className="text-md font-medium text-gray-900 mb-3">Warehouse Details</h4>
+                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Warehouse Details</h4>
                     <div className="space-y-2">
                         {warehouseStatistics.map((warehouse, index) => (
-                            <div key={warehouse.nama_gudang} className="p-3 bg-gray-50 rounded-lg">
+                            <div key={warehouse.nama_gudang} className={`p-3 rounded-lg ${
+                                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                            }`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-gray-700">
+                                    <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>
                                         {warehouse.nama_gudang}
                                     </span>
-                                    <span className="text-sm font-semibold text-gray-900">
+                                    <span className={`text-sm font-semibold ${getTextClasses('primary')}`}>
                                         {warehouse.total_activity.toLocaleString()}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div className="flex items-center">
                                         <div className="w-2 h-2 rounded bg-blue-500 mr-2"></div>
-                                        <span className="text-gray-600">
+                                        <span className={getTextClasses('secondary')}>
                                             Out: {warehouse.outgoing_count.toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="flex items-center">
                                         <div className="w-2 h-2 rounded bg-emerald-500 mr-2"></div>
-                                        <span className="text-gray-600">
+                                        <span className={getTextClasses('secondary')}>
                                             In: {warehouse.incoming_count.toLocaleString()}
                                         </span>
                                     </div>
@@ -853,11 +932,11 @@ const WebMonitoringApp = ({ user }) => {
                             {/* Kolom Kiri: Gudang dan Site (atas-bawah) */}
                             <div className="flex flex-col gap-4">
                                 {/* Box Gudang */}
-                                <div className="bg-white rounded-lg shadow-md p-6 w-72">
+                                <div className={`${getCardClasses('p-6 w-72')}`}>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-gray-600 text-sm">Gudang</p>
-                                            <p className="text-3xl font-bold text-gray-900">{dashboardData.gudang.toLocaleString()}</p>
+                                            <p className={`${getTextClasses('secondary')} text-sm`}>Gudang</p>
+                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>{dashboardData.gudang.toLocaleString()}</p>
                                         </div>
                                         <div className="bg-blue-600 text-white p-3 rounded-full">
                                             <span className="text-2xl">🏢</span>
@@ -866,11 +945,11 @@ const WebMonitoringApp = ({ user }) => {
                                 </div>
                                 
                                 {/* Box Site */}
-                                <div className="bg-white rounded-lg shadow-md p-6 w-72">
+                                <div className={`${getCardClasses('p-6 w-72')}`}>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-gray-600 text-sm">Site</p>
-                                            <p className="text-3xl font-bold text-gray-900">{dashboardData.site.toLocaleString()}</p>
+                                            <p className={`${getTextClasses('secondary')} text-sm`}>Site</p>
+                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>{dashboardData.site.toLocaleString()}</p>
                                         </div>
                                         <div className="bg-blue-700 text-white p-3 rounded-full">
                                             <span className="text-2xl">🏛️</span>
@@ -880,8 +959,8 @@ const WebMonitoringApp = ({ user }) => {
                             </div>
 
                             {/* Kolom Kanan: Login Statistics */}
-                            <div className="flex-1 bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                            <div className={`flex-1 ${getCardClasses('p-6')}`}>
+                                <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-3 flex items-center`}>
                                     <span className="text-xl mr-2">📊</span>
                                     Login Statistics
                                 </h3>
@@ -896,8 +975,8 @@ const WebMonitoringApp = ({ user }) => {
                                             <div className={`${stat.color} text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1`}>
                                                 <span className="text-sm">{stat.icon}</span>
                                             </div>
-                                            <p className="text-lg font-bold text-gray-900">{stat.value.toLocaleString()}</p>
-                                            <p className="text-gray-600 text-xs">{stat.label}</p>
+                                            <p className={`text-lg font-bold ${getTextClasses('primary')}`}>{stat.value.toLocaleString()}</p>
+                                            <p className={`${getTextClasses('secondary')} text-xs`}>{stat.label}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -1466,9 +1545,9 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
 
                         {/* Container untuk Status Chart */}
-                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <div className={`${getCardClasses('p-6 mb-6')}`}>
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                                <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                     <span className="text-2xl mr-2">📊</span>
                                     Visualisasi Status Transaksi
                                 </h2>
@@ -1486,9 +1565,9 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
 
                         {/* Container untuk Top Active Warehouses */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className={`${getCardClasses('p-6')}`}>
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                                <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                     <span className="text-2xl mr-2">🏭</span>
                                     Top Active Warehouses
                                 </h2>
@@ -1512,9 +1591,27 @@ const WebMonitoringApp = ({ user }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-800">
+        <div className={`min-h-screen transition-colors duration-300 ${
+            isDarkMode ? 'bg-gray-900' : 'bg-slate-800'
+        }`}>
+            {/* CSS Styles for glow effect */}
+            <style jsx>{`
+                .glow-blue {
+                    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
+                }
+                .glow-blue:hover {
+                    box-shadow: 0 0 25px rgba(59, 130, 246, 0.7), 0 0 50px rgba(59, 130, 246, 0.4);
+                }
+                .sidebar-glow {
+                    box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+                }
+            `}</style>
             {/* Fixed Collapsible Sidebar */}
-            <aside className="group fixed left-0 top-0 h-screen w-16 hover:w-80 bg-cyan-900/90 backdrop-blur border-r border-cyan-500 text-white flex flex-col transition-all duration-300 ease-in-out z-50">
+            <aside className={`group fixed left-0 top-0 h-screen w-16 hover:w-80 backdrop-blur border-r text-white flex flex-col transition-all duration-300 ease-in-out z-50 ${
+                isDarkMode 
+                    ? 'bg-gray-800/95 border-green-400 sidebar-glow' 
+                    : 'bg-cyan-900/90 border-cyan-500'
+            }`}>
                 <div className="p-4 group-hover:p-6">
                     <div className="flex items-center">
                         <h1 className="text-2xl font-bold text-cyan-400 group-hover:text-3xl transition-all duration-300">S</h1>
@@ -1555,6 +1652,22 @@ const WebMonitoringApp = ({ user }) => {
                         ))}
                     </div>
                 </nav>
+                
+                {/* Dark Mode Toggle */}
+                <div className="px-2 group-hover:px-6 py-2 transition-all duration-300">
+                    <button
+                        onClick={toggleDarkMode}
+                        className="w-full flex items-center justify-center group-hover:justify-start space-x-2 p-2 rounded-lg hover:bg-cyan-800/50 transition-all duration-300"
+                        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        <span className="text-lg">
+                            {isDarkMode ? '☀️' : '🌙'}
+                        </span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 text-sm font-medium">
+                            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        </span>
+                    </button>
+                </div>
                 
                 {/* User info dan logout di bawah */}
                 <div className="p-2 group-hover:p-6 border-t border-cyan-500 transition-all duration-300">
