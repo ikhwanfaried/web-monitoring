@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const AddUserPage = () => {
+  console.log('AddUserPage component loaded - Sites dropdown should be visible');
+  
   const [form, setForm] = useState({
     username: '',
     password: '',
@@ -12,6 +14,33 @@ const AddUserPage = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [sites, setSites] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(true);
+
+  // Fetch site data
+  useEffect(() => {
+    fetchSites();
+  }, []);
+
+  const fetchSites = async () => {
+    try {
+      setSitesLoading(true);
+      console.log('Fetching sites from API...');
+      const response = await fetch('/api/site?page=1&per_page=1000'); // Get all sites
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Sites data received:', result);
+        setSites(result.data || []); // Extract data from paginated response
+        console.log('Sites set to state:', result.data || []);
+      } else {
+        console.error('Failed to fetch sites');
+      }
+    } catch (error) {
+      console.error('Error fetching sites:', error);
+    } finally {
+      setSitesLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -171,16 +200,27 @@ const AddUserPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID Satuan</label>
-                  <input 
-                    type="text" 
-                    name="id_satuan" 
-                    value={form.id_satuan} 
-                    onChange={handleChange} 
-                    required 
-                    className="w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors" 
-                    placeholder="Masukkan ID satuan"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Site</label>
+                  {sitesLoading ? (
+                    <div className="w-full px-4 py-3 rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500">
+                      Memuat data site...
+                    </div>
+                  ) : (
+                    <select
+                      name="id_satuan"
+                      value={form.id_satuan}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors bg-white"
+                    >
+                      <option value="">Pilih Site</option>
+                      {sites.map((site) => (
+                        <option key={site.id} value={site.id}>
+                          {site.Location}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
               

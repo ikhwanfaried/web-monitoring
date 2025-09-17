@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Barang' }) => {
+const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Barang', isDarkMode = false }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -9,6 +9,26 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Helper functions for consistent styling
+  const getCardClasses = (baseClasses = '') => {
+    return `${baseClasses} rounded-lg shadow-md transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gray-800 border border-blue-400 glow-blue' 
+        : 'bg-white border border-gray-200'
+    }`;
+  };
+
+  const getTextClasses = (type = 'primary') => {
+    if (type === 'primary') {
+      return isDarkMode ? 'text-white' : 'text-gray-900';
+    } else if (type === 'secondary') {
+      return isDarkMode ? 'text-gray-300' : 'text-gray-700';
+    } else if (type === 'muted') {
+      return isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    }
+    return isDarkMode ? 'text-white' : 'text-gray-900';
+  };
 
   useEffect(() => {
     fetchStockData();
@@ -179,10 +199,10 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">{title}</h3>
+      <div className={getCardClasses('p-6')}>
+        <h3 className={`text-lg font-semibold ${getTextClasses('primary')} mb-4 text-center`}>{title}</h3>
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-600">Memuat data stock...</div>
+          <div className={getTextClasses('secondary')}>Memuat data stock...</div>
         </div>
       </div>
     );
@@ -190,8 +210,8 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">{title}</h3>
+      <div className={getCardClasses('p-6')}>
+        <h3 className={`text-lg font-semibold ${getTextClasses('primary')} mb-4 text-center`}>{title}</h3>
         <div className="flex justify-center items-center h-64">
           <div className="text-red-500">Error: {error}</div>
         </div>
@@ -211,10 +231,10 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className={getCardClasses('p-6')}>
       <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className={`text-lg font-semibold ${getTextClasses('primary')} mb-2`}>{title}</h3>
+        <p className={`text-sm ${getTextClasses('secondary')}`}>
           {selectedGudang === 'all' 
             ? 'Semua Gudang' 
             : `Gudang: ${selectedGudang}`
@@ -233,51 +253,63 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
           <div className="grid grid-cols-1 gap-3">
             {/* Stock Habis */}
             <div 
-              className="flex items-center p-3 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
+              className={`flex items-center p-3 rounded-lg border transition-colors cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-red-900/20 border-red-400 hover:bg-red-800/30' 
+                  : 'bg-red-50 border-red-200 hover:bg-red-100'
+              }`}
               onClick={() => handleCategoryClick('Stock Habis')}
             >
               <div className="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-800">Stock Habis</p>
-                <p className="text-lg font-bold text-red-900">{stockHabis.toLocaleString()} item</p>
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-red-200' : 'text-red-800'}`}>Stock Habis</p>
+                <p className={`text-lg font-bold ${isDarkMode ? 'text-red-100' : 'text-red-900'}`}>{stockHabis.toLocaleString()} item</p>
               </div>
               <div className="text-red-600 text-xl">🚫</div>
             </div>
 
             {/* Stock Menipis */}
             <div 
-              className="flex items-center p-3 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+              className={`flex items-center p-3 rounded-lg border transition-colors cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-amber-900/20 border-amber-400 hover:bg-amber-800/30' 
+                  : 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+              }`}
               onClick={() => handleCategoryClick('Stock Menipis')}
             >
               <div className="w-4 h-4 bg-amber-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-800">Stock Menipis</p>
-                <p className="text-lg font-bold text-amber-900">{stockMenupis.toLocaleString()} item</p>
-                <p className="text-xs text-amber-700">(1-10 unit)</p>
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-amber-200' : 'text-amber-800'}`}>Stock Menipis</p>
+                <p className={`text-lg font-bold ${isDarkMode ? 'text-amber-100' : 'text-amber-900'}`}>{stockMenupis.toLocaleString()} item</p>
+                <p className={`text-xs ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>(1-10 unit)</p>
               </div>
               <div className="text-amber-600 text-xl">⚠️</div>
             </div>
 
             {/* Siap Pakai */}
             <div 
-              className="flex items-center p-3 bg-emerald-50 rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+              className={`flex items-center p-3 rounded-lg border transition-colors cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-emerald-900/20 border-emerald-400 hover:bg-emerald-800/30' 
+                  : 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+              }`}
               onClick={() => handleCategoryClick('Siap Pakai')}
             >
               <div className="w-4 h-4 bg-emerald-500 rounded-full mr-3"></div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-emerald-800">Siap Pakai</p>
-                <p className="text-lg font-bold text-emerald-900">{stockSiapPakai.toLocaleString()} item</p>
-                <p className="text-xs text-emerald-700">(&gt;10 unit)</p>
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-emerald-200' : 'text-emerald-800'}`}>Siap Pakai</p>
+                <p className={`text-lg font-bold ${isDarkMode ? 'text-emerald-100' : 'text-emerald-900'}`}>{stockSiapPakai.toLocaleString()} item</p>
+                <p className={`text-xs ${isDarkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>(&gt;10 unit)</p>
               </div>
               <div className="text-emerald-600 text-xl">✅</div>
             </div>
           </div>
 
           {/* Total */}
-          <div className="pt-3 border-t border-gray-200">
+          <div className={`pt-3 border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             <div className="text-center">
-              <p className="text-sm text-gray-600">Total Item</p>
-              <p className="text-2xl font-bold text-gray-900">{totalItems.toLocaleString()}</p>
+              <p className={`text-sm ${getTextClasses('secondary')}`}>Total Item</p>
+              <p className={`text-2xl font-bold ${getTextClasses('primary')}`}>{totalItems.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -286,19 +318,27 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
       {/* Modal untuk detail lengkap */}
       {showModal && modalData && modalData.items && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 stock-detail-modal overflow-hidden">
+          <div className={`rounded-lg p-4 stock-detail-modal overflow-hidden ${
+            isDarkMode 
+              ? 'bg-gray-800 border border-blue-400' 
+              : 'bg-white border border-gray-200'
+          }`}>
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className={`text-lg font-bold ${getTextClasses('primary')}`}>
                   Detail {modalData.category}
                 </h3>
-                <p className="text-xs text-gray-600">
+                <p className={`text-xs ${getTextClasses('secondary')}`}>
                   {searchTerm ? `${filteredItems.length} dari ${modalData?.items?.length || 0} items` : `${modalData?.items?.length || 0} total items`}
                 </p>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                className={`text-2xl font-bold transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-white' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
               >
                 ×
               </button>
@@ -313,7 +353,11 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
                     placeholder="Cari Part Number, Nama Barang, atau Gudang..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 pl-8 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 pl-8 border rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                   />
                   <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                     <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +381,11 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
                     setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="border border-gray-300 rounded-md px-2 py-2"
+                  className={`border rounded-md px-2 py-2 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -349,30 +397,32 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
             {/* Table */}
             {currentItems.length > 0 ? (
               <div className="overflow-auto max-h-64">
-                <table className="stock-detail-table min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
+                <table className={`stock-detail-table min-w-full divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
+                  <thead className={`sticky top-0 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <tr>
-                      <th className="text-left text-gray-500 uppercase tracking-wider">
+                      <th className={`text-left uppercase tracking-wider ${getTextClasses('muted')}`}>
                         Part Number
                       </th>
-                      <th className="text-left text-gray-500 uppercase tracking-wider">
+                      <th className={`text-left uppercase tracking-wider ${getTextClasses('muted')}`}>
                         Nama Barang
                       </th>
-                      <th className="text-left text-gray-500 uppercase tracking-wider">
+                      <th className={`text-left uppercase tracking-wider ${getTextClasses('muted')}`}>
                         Stock
                       </th>
-                      <th className="text-left text-gray-500 uppercase tracking-wider">
+                      <th className={`text-left uppercase tracking-wider ${getTextClasses('muted')}`}>
                         Gudang
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`divide-y ${
+                    isDarkMode ? 'bg-gray-800 divide-gray-600' : 'bg-white divide-gray-200'
+                  }`}>
                     {currentItems.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="text-gray-900">
+                      <tr key={index} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
+                        <td className={getTextClasses('primary')}>
                           {item.part_number}
                         </td>
-                        <td className="text-gray-900">
+                        <td className={getTextClasses('primary')}>
                           {item.nama_barang}
                         </td>
                         <td>
@@ -419,8 +469,10 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
 
             {/* Pagination */}
             {filteredItems.length > 0 && (
-              <div className="stock-modal-controls flex items-center justify-between mt-3 pt-2 border-t">
-                <div className="text-gray-600">
+              <div className={`stock-modal-controls flex items-center justify-between mt-3 pt-2 border-t ${
+                isDarkMode ? 'border-gray-600' : 'border-gray-200'
+              }`}>
+                <div className={getTextClasses('secondary')}>
                   Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredItems.length)} of {filteredItems.length} 
                   {searchTerm && ` (filtered from ${modalData?.items?.length || 0} total)`} items
                 </div>
@@ -430,19 +482,27 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      className={`border rounded disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 ${
+                        isDarkMode 
+                          ? 'border-gray-600 hover:bg-gray-700 text-white' 
+                          : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                      }`}
                     >
                       Prev
                     </button>
                     
-                    <span className="px-2 py-1">
+                    <span className={`px-2 py-1 ${getTextClasses('primary')}`}>
                       Page {currentPage} of {totalPages}
                     </span>
                     
                     <button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      className={`border rounded disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 ${
+                        isDarkMode 
+                          ? 'border-gray-600 hover:bg-gray-700 text-white' 
+                          : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                      }`}
                     >
                       Next
                     </button>

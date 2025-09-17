@@ -87,6 +87,8 @@ const WebMonitoringApp = ({ user }) => {
     const [addUserLoading, setAddUserLoading] = useState(false);
     const [addUserSuccess, setAddUserSuccess] = useState(false);
     const [addUserError, setAddUserError] = useState('');
+    const [sites, setSites] = useState([]);
+    const [sitesLoading, setSitesLoading] = useState(true);
 
     // Simple tab change function
     const changeTab = (tabName) => {
@@ -146,6 +148,7 @@ const WebMonitoringApp = ({ user }) => {
         fetchLoginStats();
         fetchTransactionStatusData();
         fetchGudangList();
+        fetchSites();
     }, []);
 
     useEffect(() => {
@@ -443,6 +446,24 @@ const WebMonitoringApp = ({ user }) => {
         }
     };
 
+    const fetchSites = async () => {
+        try {
+            setSitesLoading(true);
+            const response = await fetch('/api/site?page=1&per_page=1000');
+            if (response.ok) {
+                const result = await response.json();
+                setSites(result.data || []);
+                console.log('Sites loaded for modal:', result.data?.length || 0);
+            } else {
+                console.error('Failed to fetch sites for modal');
+            }
+        } catch (error) {
+            console.error('Error fetching sites for modal:', error);
+        } finally {
+            setSitesLoading(false);
+        }
+    };
+
     const fetchGudangData = async (page = 1, perPage = itemsPerPage) => {
         try {
             setLoading(true);
@@ -531,7 +552,7 @@ const WebMonitoringApp = ({ user }) => {
         if (currentData.length === 0) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">No data available</div>
+                    <div className={`${getTextClasses('muted')}`}>No data available</div>
                 </div>
             );
         }
@@ -590,10 +611,10 @@ const WebMonitoringApp = ({ user }) => {
         };
 
         return (
-            <div className="flex flex-col lg:flex-row gap-6">
-                {/* Chart */}
-                <div className="flex-1">
-                    <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+                {/* Chart Container - 60% width */}
+                <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-3/5 h-96`}>
+                    <div className="flex justify-between items-center mb-3">
                         <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>{getChartTitle()}</h3>
                         <div className={`text-sm ${getTextClasses('secondary')}`}>
                             Total: {total.toLocaleString()} transaksi
@@ -604,7 +625,7 @@ const WebMonitoringApp = ({ user }) => {
                     <div className="flex flex-wrap gap-2 mb-4">
                         <button
                             onClick={() => setActiveChartType('status_permintaan')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_permintaan'
                                     ? 'bg-blue-600 text-white'
                                     : isDarkMode 
@@ -616,7 +637,7 @@ const WebMonitoringApp = ({ user }) => {
                         </button>
                         <button
                             onClick={() => setActiveChartType('status_penerimaan')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_penerimaan'
                                     ? 'bg-blue-600 text-white'
                                     : isDarkMode 
@@ -628,7 +649,7 @@ const WebMonitoringApp = ({ user }) => {
                         </button>
                         <button
                             onClick={() => setActiveChartType('status_pengiriman')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_pengiriman'
                                     ? 'bg-blue-600 text-white'
                                     : isDarkMode 
@@ -640,14 +661,14 @@ const WebMonitoringApp = ({ user }) => {
                         </button>
                     </div>
 
-                    <div className="h-80">
+                    <div className="h-56">
                         <Doughnut data={chartData} options={options} />
                     </div>
                 </div>
 
-                {/* Legend with Details */}
-                <div className="lg:w-80">
-                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
+                {/* Details Container - 40% width */}
+                <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-2/5 h-96`}>
+                        <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
                     <div className="space-y-2">
                         {currentData.map((item, index) => {
                             const percentage = ((item.count / total) * 100).toFixed(1);
@@ -786,7 +807,7 @@ const WebMonitoringApp = ({ user }) => {
         if (warehouseLoading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">Loading warehouse statistics...</div>
+                    <div className={`${getTextClasses('muted')}`}>Loading warehouse statistics...</div>
                 </div>
             );
         }
@@ -794,7 +815,7 @@ const WebMonitoringApp = ({ user }) => {
         if (warehouseStatistics.length === 0) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="text-gray-500">No warehouse data available</div>
+                    <div className={`${getTextClasses('muted')}`}>No warehouse data available</div>
                 </div>
             );
         }
@@ -830,9 +851,15 @@ const WebMonitoringApp = ({ user }) => {
                     labels: {
                         usePointStyle: true,
                         padding: 15,
+                        color: isDarkMode ? '#ffffff' : '#374151',
                     }
                 },
                 tooltip: {
+                    backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                    titleColor: isDarkMode ? '#ffffff' : '#374151',
+                    bodyColor: isDarkMode ? '#ffffff' : '#374151',
+                    borderColor: isDarkMode ? '#6B7280' : '#D1D5DB',
+                    borderWidth: 1,
                     callbacks: {
                         afterLabel: function(context) {
                             const warehouseIndex = context.dataIndex;
@@ -847,19 +874,22 @@ const WebMonitoringApp = ({ user }) => {
                     stacked: true,
                     grid: {
                         display: false,
+                        color: isDarkMode ? '#4B5563' : '#F3F4F6',
                     },
                     ticks: {
                         maxRotation: 45,
                         minRotation: 0,
+                        color: isDarkMode ? '#ffffff' : '#374151',
                     }
                 },
                 y: {
                     stacked: true,
                     beginAtZero: true,
                     grid: {
-                        color: '#F3F4F6',
+                        color: isDarkMode ? '#4B5563' : '#F3F4F6',
                     },
                     ticks: {
+                        color: isDarkMode ? '#ffffff' : '#374151',
                         callback: function(value) {
                             return value.toLocaleString();
                         }
@@ -873,8 +903,8 @@ const WebMonitoringApp = ({ user }) => {
                 {/* Chart */}
                 <div className="flex-1">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Top Active Warehouses</h3>
-                        <div className="text-sm text-gray-600">
+                        <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>Top Active Warehouses</h3>
+                        <div className={`text-sm ${getTextClasses('secondary')}`}>
                             Top {warehouseStatistics.length} most active warehouses
                         </div>
                     </div>
@@ -1001,24 +1031,34 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
 
                         {/* Login Logs Table - Scrollable */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Login Activity</h3>
+                        <div className={`${getCardClasses('p-6')}`}>
+                            <h3 className={`text-xl font-bold ${getTextClasses('primary')} mb-4`}>Recent Login Activity</h3>
                             <div className="overflow-x-auto">
-                                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                                <div className={`max-h-96 overflow-y-auto rounded-lg ${
+                                    isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
+                                }`}>
                                     <table className="min-w-full table-auto">
-                                        <thead className="bg-gray-50 sticky top-0">
+                                        <thead className={`sticky top-0 ${
+                                            isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                        }`}>
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">IP Address</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Login Time</th>
-                                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">User Agent</th>
+                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Username</th>
+                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Status</th>
+                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>IP Address</th>
+                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Login Time</th>
+                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>User Agent</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className={`divide-y ${
+                                            isDarkMode 
+                                                ? 'bg-gray-800 divide-gray-600' 
+                                                : 'bg-white divide-gray-200'
+                                        }`}>
                                             {loginLogs.map((log, index) => (
-                                                <tr key={index} className="hover:bg-gray-50">
-                                                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{log.username}</td>
+                                                <tr key={index} className={`${
+                                                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                                }`}>
+                                                    <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>{log.username}</td>
                                                     <td className="px-4 py-3 text-sm">
                                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                                             log.status === 'success' 
@@ -1028,11 +1068,11 @@ const WebMonitoringApp = ({ user }) => {
                                                             {log.status === 'success' ? '✅ Success' : '❌ Failed'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600 font-mono">{log.ip_address}</td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600">
+                                                    <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('secondary')}`}>{log.ip_address}</td>
+                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
                                                         {new Date(log.login_time).toLocaleString('id-ID')}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={log.user_agent}>
+                                                    <td className={`px-4 py-3 text-sm max-w-xs truncate ${getTextClasses('secondary')}`} title={log.user_agent}>
                                                         {log.user_agent}
                                                     </td>
                                                 </tr>
@@ -1056,23 +1096,27 @@ const WebMonitoringApp = ({ user }) => {
                 return (
                     <div>
                         {/* Header dengan Dropdown */}
-                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                        <div className={`${getCardClasses('p-6 mb-6')}`}>
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Data Gudang</h2>
-                                    <p className="text-gray-600">Kelola dan pantau data gudang inventaris</p>
+                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2`}>Data Gudang</h2>
+                                    <p className={`${getTextClasses('secondary')}`}>Kelola dan pantau data gudang inventaris</p>
                                 </div>
                                 
                                 {/* Dropdown Pilihan Gudang */}
                                 <div className="mt-4 md:mt-0">
-                                    <label htmlFor="gudang-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="gudang-select" className={`block text-sm font-medium ${getTextClasses('secondary')} mb-2`}>
                                         Filter Gudang:
                                     </label>
                                     <div className="custom-dropdown">
                                         <button
                                             type="button"
                                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                                            className="relative block w-64 px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            className={`relative block w-64 px-3 py-2 text-left rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                                                isDarkMode 
+                                                    ? 'bg-gray-700 border border-gray-600 text-white' 
+                                                    : 'bg-white border border-gray-300'
+                                            }`}
                                         >
                                             <span className="block truncate">
                                                 {selectedGudang === 'all' ? '🏢 Semua Gudang' : `📦 ${selectedGudang}`}
@@ -1085,15 +1129,23 @@ const WebMonitoringApp = ({ user }) => {
                                         </button>
                                         
                                         {dropdownOpen && (
-                                            <div className="custom-dropdown-content">
+                                            <div className={`custom-dropdown-content ${
+                                                isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+                                            }`}>
                                                 {/* Search Input */}
-                                                <div className="p-2 border-b border-gray-200 bg-gray-50">
+                                                <div className={`p-2 border-b ${
+                                                    isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                }`}>
                                                     <input
                                                         type="text"
                                                         placeholder="🔍 Cari gudang..."
                                                         value={searchGudang}
                                                         onChange={(e) => setSearchGudang(e.target.value)}
-                                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                            isDarkMode 
+                                                                ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                : 'bg-white border border-gray-300 text-gray-900'
+                                                        }`}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </div>
@@ -1101,7 +1153,11 @@ const WebMonitoringApp = ({ user }) => {
                                                 {/* Gudang Options */}
                                                 <div className="max-h-60 overflow-y-auto">
                                                     <div 
-                                                        className={`custom-dropdown-item ${selectedGudang === 'all' ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                        className={`custom-dropdown-item ${
+                                                            selectedGudang === 'all' 
+                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                        }`}
                                                         onClick={() => {
                                                             setSelectedGudang('all');
                                                             setDropdownOpen(false);
@@ -1117,7 +1173,11 @@ const WebMonitoringApp = ({ user }) => {
                                                         .map((gudang, index) => (
                                                             <div 
                                                                 key={index}
-                                                                className={`custom-dropdown-item ${selectedGudang === gudang.Gudang ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                                className={`custom-dropdown-item ${
+                                                                    selectedGudang === gudang.Gudang 
+                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                        : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                }`}
                                                                 onClick={() => {
                                                                     setSelectedGudang(gudang.Gudang);
                                                                     setDropdownOpen(false);
@@ -1173,7 +1233,7 @@ const WebMonitoringApp = ({ user }) => {
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
-                                        <label htmlFor="items-per-page" className="text-sm font-medium text-gray-700">
+                                        <label htmlFor="items-per-page" className={`text-sm font-medium ${getTextClasses('secondary')}`}>
                                             Items per page:
                                         </label>
                                         <select
@@ -1183,7 +1243,11 @@ const WebMonitoringApp = ({ user }) => {
                                                 setItemsPerPage(parseInt(e.target.value));
                                                 setCurrentPage(1);
                                             }}
-                                            className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className={`px-3 py-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                isDarkMode 
+                                                    ? 'bg-gray-700 border border-gray-600 text-white' 
+                                                    : 'bg-white border border-gray-300 text-gray-900'
+                                            }`}
                                         >
                                             <option value={10}>10</option>
                                             <option value={25}>25</option>
@@ -1193,52 +1257,62 @@ const WebMonitoringApp = ({ user }) => {
                                     </div>
                                 </div>
                                 
-                                <div className="text-sm text-gray-600">
+                                <div className={`text-sm ${getTextClasses('secondary')}`}>
                                     Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems.toLocaleString()} items
                                 </div>
                             </div>
                         </div>
 
                         {/* Tabel Data Barang di Gudang */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Data Barang di Gudang</h3>
+                        <div className={`${getCardClasses('p-6')}`}>
+                            <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-4`}>Data Barang di Gudang</h3>
                             
                             {gudangData.length > 0 ? (
                                 <div className="overflow-x-auto">
-                                    <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                                    <div className={`max-h-96 overflow-y-auto rounded-lg ${
+                                        isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
+                                    }`}>
                                         <table className="min-w-full table-auto">
-                                            <thead className="bg-gray-50 sticky top-0">
+                                            <thead className={`sticky top-0 ${
+                                                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                            }`}>
                                                 <tr>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Item ID</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Part Number</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nama Barang</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Gudang</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Rak</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Jumlah</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Satuan</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Harga</th>
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Item ID</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Part Number</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Nama Barang</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Gudang</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Rak</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Jumlah</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Satuan</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Harga</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Status</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            <tbody className={`divide-y ${
+                                                isDarkMode 
+                                                    ? 'bg-gray-800 divide-gray-600' 
+                                                    : 'bg-white divide-gray-200'
+                                            }`}>
                                                 {gudangData.map((item, index) => (
-                                                    <tr key={index} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.item_id}</td>
+                                                    <tr key={index} className={`${
+                                                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                                    }`}>
+                                                        <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.item_id}</td>
                                                         <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{item.part_number}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 font-medium" title={item.nama_barang}>
+                                                        <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`} title={item.nama_barang}>
                                                             <div className="max-w-48 truncate">{item.nama_barang}</div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                        <td className="px-4 py-3 text-sm">
                                                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                                                 🏢 {item.gudang}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600">{item.rak || '-'}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold text-right">
+                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.rak || '-'}</td>
+                                                        <td className={`px-4 py-3 text-sm font-semibold text-right ${getTextClasses('primary')}`}>
                                                             {item.jumlah || '0'}
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-600">{item.satuan || '-'}</td>
-                                                        <td className="px-4 py-3 text-sm text-gray-900 text-right">-</td>
+                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.satuan || '-'}</td>
+                                                        <td className={`px-4 py-3 text-sm text-right ${getTextClasses('primary')}`}>-</td>
                                                         <td className="px-4 py-3 text-sm">
                                                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                                 ✅ ACTIVE
@@ -1351,6 +1425,7 @@ const WebMonitoringApp = ({ user }) => {
                             <SafeStockPieChart 
                                 selectedGudang={selectedGudang} 
                                 title="📊 Distribusi Stock Barang"
+                                isDarkMode={isDarkMode}
                             />
                         </div>
                     </div>
@@ -1359,13 +1434,13 @@ const WebMonitoringApp = ({ user }) => {
                 return (
                     <div className="space-y-6">
                         {/* Container untuk Table Transaksi */}
-                        <div className="bg-white rounded-lg shadow-md p-6">
+                        <div className={`${getCardClasses('p-6')}`}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                            <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                 <span className="text-2xl mr-2">💳</span>
                                 Data Transaksi
                             </h2>
-                            <div className="text-sm text-gray-600">
+                            <div className={`text-sm ${getTextClasses('secondary')}`}>
                                 Total: {transaksiTotal.toLocaleString()} transaksi
                             </div>
                         </div>
@@ -1373,7 +1448,7 @@ const WebMonitoringApp = ({ user }) => {
                         {/* Filter Gudang */}
                         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium text-gray-700">Filter Gudang:</label>
+                                <label className={`text-sm font-medium ${getTextClasses('secondary')}`}>Filter Gudang:</label>
                                 <select
                                     value={selectedTransaksiGudang}
                                     onChange={(e) => {
@@ -1383,7 +1458,11 @@ const WebMonitoringApp = ({ user }) => {
                                         setTransaksiCurrentPage(1);
                                         // Note: fetchTransaksiData will be called by useEffect
                                     }}
-                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className={`px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                                        isDarkMode 
+                                            ? 'bg-gray-700 border border-gray-600 text-white' 
+                                            : 'bg-white border border-gray-300 text-gray-900'
+                                    }`}
                                 >
                                     <option value="all">Semua Gudang ({transaksiGudangList.length})</option>
                                     {transaksiGudangList.map((gudang, index) => (
@@ -1406,38 +1485,46 @@ const WebMonitoringApp = ({ user }) => {
                             <div className="flex justify-center items-center py-12">
                                 <div className="text-center">
                                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                                    <p className="mt-4 text-gray-600">Loading data transaksi...</p>
+                                    <p className={`mt-4 ${getTextClasses('secondary')}`}>Loading data transaksi...</p>
                                 </div>
                             </div>
                         ) : (
                             <div>
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full table-auto">
-                                        <thead className="bg-gray-50">
+                                        <thead className={`${
+                                            isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                        }`}>
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Dokumen</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part Number</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Barang</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dari Gudang</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ke Gudang</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg Sista</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Permintaan</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Penerimaan</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Pengiriman</th>
-                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Nomor Dokumen</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Part Number</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Nama Barang</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Dari Gudang</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Ke Gudang</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Reg Sista</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Permintaan</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Penerimaan</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Pengiriman</th>
+                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Site</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className={`divide-y ${
+                                            isDarkMode 
+                                                ? 'bg-gray-800 divide-gray-600' 
+                                                : 'bg-white divide-gray-200'
+                                        }`}>
                                             {transaksiData.map((item, index) => (
-                                                <tr key={item.id || index} className="hover:bg-gray-50">
-                                                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">{item.nomor_dokumen || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm text-gray-900 font-mono">{item.part_number || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={item.nama_barang || 'Nama barang tidak ditemukan'}>
+                                                <tr key={item.id || index} className={`${
+                                                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                                }`}>
+                                                    <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>{item.nomor_dokumen || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.part_number || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm max-w-xs truncate ${getTextClasses('primary')}`} title={item.nama_barang || 'Nama barang tidak ditemukan'}>
                                                         {item.nama_barang || '-'}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.dari_gudang || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.ke_gudang || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.dipasang_di_no_reg_sista || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dari_gudang || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.ke_gudang || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dipasang_di_no_reg_sista || '-'}</td>
                                                     <td className="px-4 py-3 text-sm">
                                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                                             item.status_permintaan === 'Diproses' 
@@ -1471,7 +1558,7 @@ const WebMonitoringApp = ({ user }) => {
                                                             {item.status_pengiriman || '-'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-600">{item.site || '-'}</td>
+                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.site || '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1480,15 +1567,15 @@ const WebMonitoringApp = ({ user }) => {
 
                                 {transaksiData.length === 0 && !transaksiLoading && (
                                     <div className="text-center py-12">
-                                        <div className="text-gray-400 text-6xl mb-4">📄</div>
-                                        <p className="text-gray-500 text-lg">Tidak ada data transaksi</p>
+                                        <div className={`text-6xl mb-4 ${getTextClasses('muted')}`}>📄</div>
+                                        <p className={`text-lg ${getTextClasses('muted')}`}>Tidak ada data transaksi</p>
                                     </div>
                                 )}
 
                                 {/* Pagination untuk transaksi */}
                                 {transaksiTotalPages > 1 && (
                                     <div className="mt-6 flex items-center justify-between">
-                                        <div className="text-sm text-gray-700">
+                                        <div className={`text-sm ${getTextClasses('secondary')}`}>
                                             Halaman {transaksiCurrentPage} dari {transaksiTotalPages} 
                                             ({transaksiTotal.toLocaleString()} total transaksi)
                                         </div>
@@ -1555,7 +1642,7 @@ const WebMonitoringApp = ({ user }) => {
 
                             {statusChartLoading ? (
                                 <div className="flex items-center justify-center h-64">
-                                    <div className="text-gray-500">Loading chart data...</div>
+                                    <div className={`${getTextClasses('muted')}`}>Loading chart data...</div>
                                 </div>
                             ) : (
                                 <div className="h-auto">
@@ -1575,7 +1662,7 @@ const WebMonitoringApp = ({ user }) => {
 
                             {warehouseLoading ? (
                                 <div className="flex items-center justify-center h-64">
-                                    <div className="text-gray-500">Loading warehouse data...</div>
+                                    <div className={`${getTextClasses('muted')}`}>Loading warehouse data...</div>
                                 </div>
                             ) : (
                                 <div className="h-auto">
@@ -1780,16 +1867,27 @@ const WebMonitoringApp = ({ user }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">ID Satuan</label>
-                                    <input 
-                                        type="number" 
-                                        name="id_satuan" 
-                                        value={addUserForm.id_satuan} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan ID satuan (angka)"
-                                    />
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Site</label>
+                                    {sitesLoading ? (
+                                        <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                            Memuat data site...
+                                        </div>
+                                    ) : (
+                                        <select
+                                            name="id_satuan"
+                                            value={addUserForm.id_satuan}
+                                            onChange={handleAddUserChange}
+                                            required
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                        >
+                                            <option value="">Pilih Site</option>
+                                            {sites.map((site) => (
+                                                <option key={site.id} value={site.id}>
+                                                    {site.Location}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </div>
                             </div>
                             
