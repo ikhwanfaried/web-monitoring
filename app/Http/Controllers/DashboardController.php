@@ -467,7 +467,8 @@ class DashboardController extends Controller
                 'Nama' => $request->Nama,
                 'NRP' => $request->NRP,
                 'Email' => $request->Email,
-                'id_satuan' => $request->id_satuan
+                'id_satuan' => $request->id_satuan,
+                'id_status' => 1 // Default status untuk user baru
             ]);
 
             return response()->json([

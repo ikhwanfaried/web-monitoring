@@ -38,6 +38,7 @@ class User extends Authenticatable
         'NRP',
         'Email',
         'id_satuan',
+        'id_status',
     ];
 
     /**
