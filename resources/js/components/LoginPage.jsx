@@ -15,12 +15,30 @@ const LoginPage = ({ onLogin }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ username, password }),
             });
             const result = await response.json();
             if (response.ok && result.success) {
-                onLogin(result.user);
+                // Simpan user data ke sessionStorage
+                sessionStorage.setItem('userData', JSON.stringify(result.user));
+                
+                // Redirect berdasarkan id_status user
+                const userRole = result.user.id_status;
+                switch (userRole) {
+                    case 1:
+                        window.location.href = '/superadmin';
+                        break;
+                    case 2:
+                        window.location.href = '/admin';
+                        break;
+                    case 3:
+                        window.location.href = '/user';
+                        break;
+                    default:
+                        onLogin(result.user); // Fallback ke behavior lama
+                }
             } else {
                 setError(result.message || 'Login gagal');
             }

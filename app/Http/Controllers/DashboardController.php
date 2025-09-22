@@ -13,20 +13,75 @@ use App\Models\Dataset40200;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Cek apakah ada parameter user_role untuk redirect otomatis
+        $userRole = $request->get('user_role');
+        
+        if ($userRole) {
+            switch ($userRole) {
+                case '1':
+                    return redirect()->route('superadmin.dashboard');
+                case '2':
+                    return redirect()->route('admin.dashboard');
+                case '3':
+                    return redirect()->route('user.dashboard');
+                default:
+                    return view('app'); // Default login page
+            }
+        }
+        
+        // Jika tidak ada parameter, tampilkan halaman login default
         return view('app');
     }
 
-    public function apiData()
+    public function apiData(Request $request)
     {
         try {
-            $data = [
-                'items' => DB::table('items')->count(),
-                'dataset2' => DB::table('dataset2')->count(),
-                'gudang' => DB::table('gudang')->count(),
-                'site' => DB::table('site')->count(),
-            ];
+            $userRole = $request->get('user_role', 'superadmin');
+            $siteFilter = $request->get('site_filter');
+            $userSite = $request->get('user_site', 'PJKA'); // Default site untuk user
+
+            if ($userRole === 'user') {
+                // User hanya melihat data dari site tertentu
+                $data = [
+                    'items' => DB::table('items')
+                        ->where('Site', $userSite)
+                        ->count(),
+                    'dataset2' => DB::table('dataset2')
+                        ->where('Lanud/Depo', 'LIKE', '%' . $userSite . '%')
+                        ->count(),
+                    'gudang' => DB::table('gudang')
+                        ->where('Site', $userSite)
+                        ->count(),
+                    'site' => 1, // User hanya melihat satu site
+                ];
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                // Admin melihat data dari site mereka
+                $data = [
+                    'items' => DB::table('items')
+                        ->join('site', 'items.id_satuan', '=', 'site.id')
+                        ->where('site.id', $siteFilter)
+                        ->count(),
+                    'dataset2' => DB::table('dataset2')
+                        ->join('site', 'dataset2.id_satuan', '=', 'site.id')
+                        ->where('site.id', $siteFilter)
+                        ->count(),
+                    'gudang' => DB::table('gudang')
+                        ->join('site', 'gudang.id_satuan', '=', 'site.id')
+                        ->where('site.id', $siteFilter)
+                        ->count(),
+                    'site' => 1,
+                ];
+            } else {
+                // SuperAdmin melihat semua data
+                $data = [
+                    'items' => DB::table('items')->count(),
+                    'dataset2' => DB::table('dataset2')->count(),
+                    'gudang' => DB::table('gudang')->count(),
+                    'site' => DB::table('site')->count(),
+                ];
+            }
 
             return response()->json($data);
         } catch (\Exception $e) {
@@ -72,7 +127,11 @@ class DashboardController extends Controller
         
         $user = DB::table('user')->where('username', $username)->first();
         
-        if ($user && $user->password === $password) {
+        if ($user && Hash::check($password, $user->password)) {
+            // Get site information based on user's id_satuan
+            $site = DB::table('site')->where('id', $user->id_satuan)->first();
+            $siteName = $site ? trim(str_replace("\u{00A0}", ' ', $site->Site)) : null;
+            
             // Login berhasil - catat log
             LoginLog::create([
                 'user_id' => $user->id,
@@ -92,6 +151,8 @@ class DashboardController extends Controller
                     'email' => $user->Email,
                     'nrp' => $user->NRP,
                     'id_satuan' => $user->id_satuan,
+                    'id_status' => $user->id_status, // Tambahkan id_status untuk routing
+                    'site' => $siteName, // Add site name for filtering
                 ]
             ]);
         } else {
@@ -146,22 +207,37 @@ class DashboardController extends Controller
             $page = $request->get('page', 1);
             $perPage = $request->get('per_page', 25);
             $filter = $request->get('filter', 'all');
+            $userRole = $request->get('user_role', 'superadmin');
+            $userSite = $request->get('user_site', 'PJKA');
+            $siteFilter = $request->get('site_filter');
             
             $query = DB::table('dataset2')
                 ->select(
-                    'id',
-                    'Item ID as item_id',
-                    'Part Number as part_number',
-                    'Nama Barang as nama_barang',
-                    'Jumlah as jumlah',
-                    'Gudang as gudang',
-                    'Rak as rak',
-                    'Satuan as satuan'
+                    'dataset2.id',
+                    'dataset2.Item ID as item_id',
+                    'dataset2.Part Number as part_number',
+                    'dataset2.Nama Barang as nama_barang',
+                    'dataset2.Jumlah as jumlah',
+                    'dataset2.Gudang as gudang',
+                    'dataset2.Rak as rak',
+                    'dataset2.Satuan as satuan'
                 );
+
+            // Apply site filtering based on user role
+            if ($userRole === 'user' && $userSite) {
+                // Dataset2 menggunakan kolom 'Lanud/Depo' untuk site filtering
+                $query->where('dataset2.Lanud/Depo', 'LIKE', '%' . $userSite . '%');
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                // Get site name from site table for admin filtering
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $query->where('dataset2.Lanud/Depo', 'LIKE', '%' . $site->Site . '%');
+                }
+            }
             
-            // Terapkan filter jika bukan 'all'
+            // Terapkan filter gudang jika bukan 'all'
             if ($filter && $filter !== 'all') {
-                $query->where('Gudang', $filter);
+                $query->where('dataset2.Gudang', $filter);
             }
             
             // Batasi per_page maksimum untuk performa server
@@ -177,8 +253,19 @@ class DashboardController extends Controller
             
             // Hitung total dengan filter yang sama
             $totalQuery = DB::table('dataset2');
+            
+            // Apply same site filtering for count
+            if ($userRole === 'user' && $userSite) {
+                $totalQuery->where('dataset2.Lanud/Depo', 'LIKE', '%' . $userSite . '%');
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $totalQuery->where('dataset2.Lanud/Depo', 'LIKE', '%' . $site->Site . '%');
+                }
+            }
+            
             if ($filter && $filter !== 'all') {
-                $totalQuery->where('Gudang', $filter);
+                $totalQuery->where('dataset2.Gudang', $filter);
             }
             $total = $totalQuery->count();
             $lastPage = ceil($total / $perPage);
@@ -217,6 +304,28 @@ class DashboardController extends Controller
                 'current_page' => $page,
                 'last_page' => $lastPage,
                 'total' => $total
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching site',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getSiteById($id)
+    {
+        try {
+            $site = DB::table('site')->where('id', $id)->first();
+            
+            if (!$site) {
+                return response()->json([
+                    'error' => 'Site not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'data' => $site
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -277,13 +386,30 @@ class DashboardController extends Controller
         }
     }
 
-    public function getTransactionStatusChart()
+    public function getTransactionStatusChart(Request $request)
     {
         try {
-            $statusData = Transaksi1::select('status_transaksi', DB::raw('count(*) as count'))
+            $userRole = $request->get('user_role', 'superadmin');
+            $userSite = $request->get('user_site', 'PJKA');
+            $siteFilter = $request->get('site_filter');
+
+            $query = Transaksi1::select('status_transaksi', DB::raw('count(*) as count'))
                 ->whereNotNull('status_transaksi')
-                ->where('status_transaksi', '!=', '')
-                ->groupBy('status_transaksi')
+                ->where('status_transaksi', '!=', '');
+
+            // Apply site filtering based on user role
+            if ($userRole === 'user') {
+                // Untuk user, filter berdasarkan site langsung
+                $query->where('site', $userSite);
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                // Untuk admin, filter berdasarkan site ID
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $query->where('site', $site->Site);
+                }
+            }
+
+            $statusData = $query->groupBy('status_transaksi')
                 ->orderBy('count', 'desc')
                 ->get();
 
@@ -337,40 +463,66 @@ class DashboardController extends Controller
         }
     }
 
-    public function getGudangList()
+    public function getGudangList(Request $request)
     {
         try {
-            // Ambil semua gudang dari tabel gudang (432 gudang)
-            $gudangList = DB::table('gudang')
-                ->select('Location as Gudang')
-                ->orderBy('Location')
-                ->get();
+            $userRole = $request->get('user_role', 'superadmin');
+            $userSite = $request->get('user_site', 'PJKA');
+            $siteFilter = $request->get('site_filter');
 
-            // Debug: log jumlah gudang yang ditemukan
-            \Log::info('Total gudang from gudang table: ' . $gudangList->count());
-            
-            return response()->json([
-                'data' => $gudangList,
-                'total_count' => $gudangList->count(),
-                'source' => 'gudang_table'
-            ]);
+            if ($userRole === 'user') {
+                // User hanya melihat gudang di site mereka
+                $gudangList = DB::table('gudang')
+                    ->select('Location as Gudang')
+                    ->where('Site', $userSite)
+                    ->orderBy('Location')
+                    ->get();
+
+                return response()->json([
+                    'data' => $gudangList,
+                    'total_count' => $gudangList->count(),
+                    'source' => 'gudang_table_filtered_by_site',
+                    'site' => $userSite
+                ]);
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                // Admin hanya melihat gudang di site mereka (by site id from site table)
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $gudangList = DB::table('gudang')
+                        ->select('Location as Gudang')
+                        ->where('Site', $site->Site)
+                        ->orderBy('Location')
+                        ->get();
+                } else {
+                    $gudangList = collect([]);
+                }
+
+                return response()->json([
+                    'data' => $gudangList,
+                    'total_count' => $gudangList->count(),
+                    'source' => 'gudang_table_filtered_by_admin'
+                ]);
+            } else {
+                // SuperAdmin melihat semua gudang
+                $gudangList = DB::table('gudang')
+                    ->select('Location as Gudang')
+                    ->orderBy('Location')
+                    ->get();
+
+                return response()->json([
+                    'data' => $gudangList,
+                    'total_count' => $gudangList->count(),
+                    'source' => 'gudang_table'
+                ]);
+            }
         } catch (\Exception $e) {
-            \Log::error('Error accessing gudang table, falling back to dataset2: ' . $e->getMessage());
+            \Log::error('Error accessing gudang table: ' . $e->getMessage());
             
-            // Fallback ke dataset2 jika tabel gudang tidak accessible
-            $gudangList = DB::table('dataset2')
-                ->select('Gudang')
-                ->distinct()
-                ->whereNotNull('Gudang')
-                ->where('Gudang', '!=', '')
-                ->where('Gudang', '!=', ' ')
-                ->orderBy('Gudang')
-                ->get();
-
             return response()->json([
-                'data' => $gudangList,
-                'total_count' => $gudangList->count(),
-                'source' => 'dataset2_fallback'
+                'data' => [],
+                'total_count' => 0,
+                'source' => 'error',
+                'error' => $e->getMessage()
             ]);
         }
     }
@@ -451,7 +603,8 @@ class DashboardController extends Controller
                 'Nama' => 'required|string|max:255',
                 'NRP' => 'required|integer|unique:user,NRP',
                 'Email' => 'required|email|max:255|unique:user,Email',
-                'id_satuan' => 'required|integer'
+                'id_satuan' => 'required|integer',
+                'id_status' => 'integer|min:1|max:3' // Optional, validate if provided
             ]);
 
             if ($validator->fails()) {
@@ -461,6 +614,9 @@ class DashboardController extends Controller
                 ], 422);
             }
 
+            // Default id_status berdasarkan user yang membuat
+            $id_status = $request->has('id_status') ? $request->id_status : 3; // Default ke User (3)
+
             $user = User::create([
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
@@ -468,7 +624,7 @@ class DashboardController extends Controller
                 'NRP' => $request->NRP,
                 'Email' => $request->Email,
                 'id_satuan' => $request->id_satuan,
-                'id_status' => 1 // Default status untuk user baru
+                'id_status' => $id_status
             ]);
 
             return response()->json([
@@ -480,7 +636,8 @@ class DashboardController extends Controller
                     'Nama' => $user->Nama,
                     'NRP' => $user->NRP,
                     'Email' => $user->Email,
-                    'id_satuan' => $user->id_satuan
+                    'id_satuan' => $user->id_satuan,
+                    'id_status' => $user->id_status
                 ]
             ], 201);
 
@@ -498,6 +655,9 @@ class DashboardController extends Controller
             $page = $request->get('page', 1);
             $perPage = $request->get('per_page', 15);
             $filter = $request->get('filter', 'all');
+            $siteFilter = $request->get('site_filter');
+            $userRole = $request->get('user_role', 'admin');
+            $userSite = $request->get('user_site');
             
             // Batasi per_page maksimum untuk performa server
             $maxPerPage = 100;
@@ -534,6 +694,17 @@ class DashboardController extends Controller
             })
             ->leftJoin('dataset2', 'dataset40200.part_number', '=', 'dataset2.Part Number');
             
+            // Apply site filtering based on user role
+            if ($userRole === 'user' && $userSite) {
+                $query->where('dataset40200.site', $userSite);
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                // Get site name from site table for admin filtering
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $query->where('dataset40200.site', $site->Site);
+                }
+            }
+            
             // Terapkan filter jika bukan 'all'
             if ($filter && $filter !== 'all') {
                 $query->where(function($q) use ($filter) {
@@ -549,6 +720,17 @@ class DashboardController extends Controller
             
             // Hitung total dengan filter yang sama (tanpa JOIN untuk performance)
             $totalQuery = Dataset40200::query();
+            
+            // Apply same site filtering for count
+            if ($userRole === 'user' && $userSite) {
+                $totalQuery->where('site', $userSite);
+            } elseif ($userRole === 'admin' && $siteFilter) {
+                $site = DB::table('site')->where('id', $siteFilter)->first();
+                if ($site) {
+                    $totalQuery->where('site', $site->Site);
+                }
+            }
+            
             if ($filter && $filter !== 'all') {
                 $totalQuery->where(function($q) use ($filter) {
                     $q->where('dari_gudang', 'LIKE', '%' . $filter . '%')
@@ -610,9 +792,26 @@ class DashboardController extends Controller
     {
         try {
             $filter = $request->get('filter', 'all');
+            $siteFilter = $request->get('site_filter');
+            $userSite = $request->get('user_site'); // Direct site name from user
+            $userRole = $request->get('user_role', 'superadmin');
             
             // Build base query
             $baseQuery = Dataset40200::query();
+            
+            // Apply site filtering for admin and user roles
+            if ($userRole === 'admin' || $userRole === 'user') {
+                if ($userSite) {
+                    // Direct site filtering using user_site parameter
+                    $baseQuery->where('site', $userSite);
+                } elseif ($siteFilter) {
+                    // Legacy: Get site name from id_satuan via join
+                    $baseQuery->join('site', function($join) use ($siteFilter) {
+                        $join->where('site.id', $siteFilter)
+                             ->whereColumn('dataset40200.site', 'site.Site');
+                    });
+                }
+            }
             
             // Apply filter if not 'all'
             if ($filter && $filter !== 'all') {
@@ -781,9 +980,26 @@ class DashboardController extends Controller
         try {
             $limit = $request->get('limit', 10);
             $filter = $request->get('filter', 'all');
+            $siteFilter = $request->get('site_filter');
+            $userSite = $request->get('user_site'); // Direct site name from user
+            $userRole = $request->get('user_role', 'superadmin');
             
             // Build base query
             $baseQuery = Dataset40200::query();
+            
+            // Apply site filtering for admin and user roles
+            if ($userRole === 'admin' || $userRole === 'user') {
+                if ($userSite) {
+                    // Direct site filtering using user_site parameter
+                    $baseQuery->where('site', $userSite);
+                } elseif ($siteFilter) {
+                    // Legacy: Get site name from id_satuan via join
+                    $baseQuery->join('site', function($join) use ($siteFilter) {
+                        $join->where('site.id', $siteFilter)
+                             ->whereColumn('dataset40200.site', 'site.Site');
+                    });
+                }
+            }
             
             // Apply filter if not 'all'
             if ($filter && $filter !== 'all') {
@@ -876,5 +1092,122 @@ class DashboardController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getWarehouseStatistics(Request $request)
+    {
+        try {
+            $siteFilter = $request->get('site_filter');
+            $filter = $request->get('filter', 'all');
+            $userRole = $request->get('user_role', 'superadmin');
+            
+            // Base query for transaksi with site filtering
+            $baseQuery = Transaksi1::query();
+            
+            // Apply site filtering for admin and user roles
+            if ($userRole === 'admin' || $userRole === 'user') {
+                if ($siteFilter) {
+                    $baseQuery->where('id_satuan', $siteFilter);
+                }
+            }
+            
+            // Apply gudang filter if specified
+            if ($filter !== 'all') {
+                $baseQuery->where(function ($query) use ($filter) {
+                    $query->where('dari_gudang', $filter)
+                          ->orWhere('ke_gudang', $filter);
+                });
+            }
+            
+            // Get warehouse activity statistics
+            $fromWarehouseStats = (clone $baseQuery)
+                ->select('dari_gudang as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('dari_gudang')
+                ->where('dari_gudang', '!=', '')
+                ->groupBy('dari_gudang')
+                ->get();
+                
+            $toWarehouseStats = (clone $baseQuery)
+                ->select('ke_gudang as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('ke_gudang')
+                ->where('ke_gudang', '!=', '')
+                ->groupBy('ke_gudang')
+                ->get();
+            
+            // Combine and aggregate warehouse statistics
+            $warehouseStats = [];
+            
+            foreach ($fromWarehouseStats as $stat) {
+                $name = trim($stat->warehouse);
+                if (!isset($warehouseStats[$name])) {
+                    $warehouseStats[$name] = [
+                        'warehouse' => $name,
+                        'outgoing' => 0,
+                        'incoming' => 0,
+                        'total' => 0
+                    ];
+                }
+                $warehouseStats[$name]['outgoing'] += $stat->count;
+                $warehouseStats[$name]['total'] += $stat->count;
+            }
+            
+            foreach ($toWarehouseStats as $stat) {
+                $name = trim($stat->warehouse);
+                if (!isset($warehouseStats[$name])) {
+                    $warehouseStats[$name] = [
+                        'warehouse' => $name,
+                        'outgoing' => 0,
+                        'incoming' => 0,
+                        'total' => 0
+                    ];
+                }
+                $warehouseStats[$name]['incoming'] += $stat->count;
+                $warehouseStats[$name]['total'] += $stat->count;
+            }
+            
+            // Sort by total activity
+            $sortedStats = collect($warehouseStats)
+                ->sortByDesc('total')
+                ->map(function ($warehouse) {
+                    return [
+                        'nama_gudang' => $warehouse['warehouse'],
+                        'outgoing_count' => $warehouse['outgoing'],
+                        'incoming_count' => $warehouse['incoming'],
+                        'total_activity' => $warehouse['total']
+                    ];
+                })
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'data' => $sortedStats,
+                'filter' => $filter,
+                'user_role' => $userRole,
+                'site_filter' => $siteFilter,
+                'total_warehouses' => count($warehouseStats)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error fetching warehouse statistics',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Role-based dashboard methods
+    public function superAdminDashboard()
+    {
+        return view('superadmin');
+    }
+
+    public function adminDashboard()
+    {
+        return view('admin');
+    }
+
+    public function userDashboard()
+    {
+        return view('user');
     }
 }

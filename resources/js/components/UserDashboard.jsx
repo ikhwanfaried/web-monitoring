@@ -7,20 +7,12 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-const WebMonitoringApp = ({ user }) => {
+const UserDashboard = ({ user }) => {
     const [dashboardData, setDashboardData] = useState({
         items: 0,
         dataset2: 0,
         gudang: 0,
         site: 0
-    });
-
-    const [loginLogs, setLoginLogs] = useState([]);
-    const [loginStats, setLoginStats] = useState({
-        today: 0,
-        successful: 0,
-        failed: 0,
-        total: 0
     });
 
     const [transactionStatusData, setTransactionStatusData] = useState([]);
@@ -38,58 +30,27 @@ const WebMonitoringApp = ({ user }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchGudang, setSearchGudang] = useState('');
 
-    // State untuk transaksi
+    // State untuk transaksi - LIMITED for user
     const [transaksiData, setTransaksiData] = useState([]);
     const [transaksiCurrentPage, setTransaksiCurrentPage] = useState(1);
     const [transaksiTotalPages, setTransaksiTotalPages] = useState(1);
     const [transaksiTotal, setTransaksiTotal] = useState(0);
     const [transaksiLoading, setTransaksiLoading] = useState(false);
     const [transaksiPerPage, setTransaksiPerPage] = useState(15);
-    const [showAll, setShowAll] = useState(false);
     const [selectedTransaksiGudang, setSelectedTransaksiGudang] = useState('all');
     const [transaksiGudangList, setTransaksiGudangList] = useState([]);
 
-    // State untuk status chart
-    const [statusStatistics, setStatusStatistics] = useState({
-        status_permintaan: [],
-        status_penerimaan: [],
-        status_pengiriman: []
-    });
-    const [activeChartType, setActiveChartType] = useState('status_permintaan');
+    // State untuk visualisasi transaksi
+    const [statusStatistics, setStatusStatistics] = useState([]);
     const [statusChartLoading, setStatusChartLoading] = useState(false);
-
-    // State untuk top active warehouses
     const [warehouseStatistics, setWarehouseStatistics] = useState([]);
     const [warehouseLoading, setWarehouseLoading] = useState(false);
-
-    // State untuk status detail hover
-    const [statusDetailData, setStatusDetailData] = useState(null);
-    const [statusDetailLoading, setStatusDetailLoading] = useState(false);
-    const [hoveredStatus, setHoveredStatus] = useState(null);
-    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, side: 'right' });
 
     // State untuk dark mode
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const saved = localStorage.getItem('darkMode');
         return saved ? JSON.parse(saved) : false;
     });
-
-    // State untuk modal add user
-    const [showAddUserModal, setShowAddUserModal] = useState(false);
-    const [addUserForm, setAddUserForm] = useState({
-        username: '',
-        password: '',
-        Nama: '',
-        NRP: '',
-        Email: '',
-        id_satuan: '',
-        id_status: '3' // Default ke User (3)
-    });
-    const [addUserLoading, setAddUserLoading] = useState(false);
-    const [addUserSuccess, setAddUserSuccess] = useState(false);
-    const [addUserError, setAddUserError] = useState('');
-    const [sites, setSites] = useState([]);
-    const [sitesLoading, setSitesLoading] = useState(true);
 
     // Simple tab change function
     const changeTab = (tabName) => {
@@ -144,13 +105,10 @@ const WebMonitoringApp = ({ user }) => {
     }, []);
 
     useEffect(() => {
-        // Fetch data dari Laravel API
+        // Fetch data dari Laravel API - USER: heavily filtered by site
         fetchDashboardData();
-        fetchLoginLogs();
-        fetchLoginStats();
         fetchTransactionStatusData();
         fetchGudangList();
-        fetchSites();
     }, []);
 
     useEffect(() => {
@@ -175,14 +133,6 @@ const WebMonitoringApp = ({ user }) => {
         }
     }, [selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Fetch status statistics and warehouse statistics when transaksi tab is active or filter changes
-    useEffect(() => {
-        if (activeTab === 'transaksi') {
-            fetchStatusStatistics();
-            fetchWarehouseStatistics();
-        }
-    }, [activeTab, selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
-
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -197,9 +147,19 @@ const WebMonitoringApp = ({ user }) => {
         };
     }, [dropdownOpen]);
 
+    // Fetch status statistics and warehouse statistics when transaksi tab is active or filter changes
+    useEffect(() => {
+        if (activeTab === 'transaksi') {
+            fetchStatusStatistics();
+            fetchWarehouseStatistics();
+        }
+    }, [activeTab, selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // USER: Data heavily filtered by user's site
     const fetchDashboardData = async () => {
         try {
-            const response = await fetch('/api/dashboard');
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
+            const response = await fetch(`/api/dashboard?user_role=user&user_site=${encodeURIComponent(userSite)}`);
             const data = await response.json();
             setDashboardData(data);
         } catch (error) {
@@ -207,29 +167,10 @@ const WebMonitoringApp = ({ user }) => {
         }
     };
 
-    const fetchLoginLogs = async () => {
-        try {
-            const response = await fetch('/api/login-logs');
-            const data = await response.json();
-            setLoginLogs(data.data || []);
-        } catch (error) {
-            console.error('Error fetching login logs:', error);
-        }
-    };
-
-    const fetchLoginStats = async () => {
-        try {
-            const response = await fetch('/api/login-stats');
-            const data = await response.json();
-            setLoginStats(data);
-        } catch (error) {
-            console.error('Error fetching login stats:', error);
-        }
-    };
-
     const fetchTransactionStatusData = async () => {
         try {
-            const response = await fetch('/api/transaction-status-chart');
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
+            const response = await fetch(`/api/transaction-status-chart?user_role=user&user_site=${encodeURIComponent(userSite)}`);
             const data = await response.json();
             setTransactionStatusData(data);
         } catch (error) {
@@ -242,11 +183,14 @@ const WebMonitoringApp = ({ user }) => {
         
         setTransaksiLoading(true);
         try {
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
             const filterParam = selectedTransaksiGudang !== 'all' ? `&filter=${encodeURIComponent(selectedTransaksiGudang)}` : '';
-            const response = await fetch(`/api/transaksi?page=${page}&per_page=${perPage}${filterParam}`);
+            const siteParam = `&user_site=${encodeURIComponent(userSite)}`;
+            const roleParam = `&user_role=user`;
+            const response = await fetch(`/api/transaksi?page=${page}&per_page=${perPage}${filterParam}${siteParam}${roleParam}`);
             const data = await response.json();
             
-            console.log('📄 Transaksi response:', data);
+            console.log('📄 User Transaksi response:', data);
             
             if (data.data) {
                 setTransaksiData(data.data);
@@ -263,9 +207,10 @@ const WebMonitoringApp = ({ user }) => {
 
     const fetchTransaksiGudangList = async () => {
         try {
-            const response = await fetch('/api/transaksi-gudang-list');
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
+            const response = await fetch(`/api/transaksi-gudang-list?user_role=user&user_site=${encodeURIComponent(userSite)}`);
             const data = await response.json();
-            console.log('🏢 Transaksi gudang list response:', data);
+            console.log('🏢 User Transaksi gudang list response:', data);
             
             if (data.data) {
                 setTransaksiGudangList(data.data);
@@ -278,15 +223,18 @@ const WebMonitoringApp = ({ user }) => {
     const fetchStatusStatistics = async () => {
         try {
             setStatusChartLoading(true);
-            const response = await fetch(`/api/status-statistics?filter=${selectedTransaksiGudang}`);
+            const filterParam = selectedTransaksiGudang !== 'all' ? selectedTransaksiGudang : 'all';
+            // For demo, use a specific site - in real app this would come from user session
+            const userSite = 'LANUD RSN'; // This should be dynamic based on logged user
+            const response = await fetch(`/api/status-statistics?filter=${filterParam}&user_site=${userSite}&user_role=user`);
             const data = await response.json();
-            console.log('📊 Status statistics response:', data);
+            console.log('📊 User Status statistics response:', data);
             
             if (data.status_permintaan && data.status_penerimaan && data.status_pengiriman) {
                 setStatusStatistics(data);
             }
         } catch (error) {
-            console.error('Error fetching status statistics:', error);
+            console.error('❌ Error fetching user status statistics:', error);
         } finally {
             setStatusChartLoading(false);
         }
@@ -295,199 +243,36 @@ const WebMonitoringApp = ({ user }) => {
     const fetchWarehouseStatistics = async () => {
         try {
             setWarehouseLoading(true);
-            const response = await fetch(`/api/top-active-warehouses?filter=${selectedTransaksiGudang}&limit=10`);
+            const filterParam = selectedTransaksiGudang !== 'all' ? selectedTransaksiGudang : 'all';
+            // For demo, use a specific site - in real app this would come from user session
+            const userSite = 'LANUD RSN'; // This should be dynamic based on logged user
+            const response = await fetch(`/api/top-active-warehouses?filter=${filterParam}&limit=10&user_site=${userSite}&user_role=user`);
             const data = await response.json();
-            console.log('🏭 Warehouse statistics response:', data);
+            console.log('🏭 User Warehouse statistics response:', data);
             
             if (data.success) {
                 setWarehouseStatistics(data.data);
             }
         } catch (error) {
-            console.error('Error fetching warehouse statistics:', error);
+            console.error('❌ Error fetching user warehouse statistics:', error);
         } finally {
             setWarehouseLoading(false);
         }
     };
 
-    const fetchStatusDetail = async (statusType, statusValue) => {
-        try {
-            setStatusDetailLoading(true);
-            const response = await fetch(`/api/status-detail?status_type=${statusType}&status_value=${encodeURIComponent(statusValue)}&filter=${selectedTransaksiGudang}`);
-            const data = await response.json();
-            console.log('📋 Status detail response:', data);
-            
-            if (data.success) {
-                setStatusDetailData(data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching status detail:', error);
-        } finally {
-            setStatusDetailLoading(false);
-        }
-    };
-
-    const calculateTooltipPosition = (event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const tooltipWidth = 320; // estimated tooltip width
-        const tooltipHeight = 200; // estimated tooltip height
-        
-        // Calculate if tooltip fits on the right side
-        const fitsRight = rect.right + tooltipWidth + 16 <= windowWidth;
-        
-        // Calculate if tooltip fits on the left side
-        const fitsLeft = rect.left - tooltipWidth - 16 >= 0;
-        
-        // Determine optimal side
-        let side = 'right';
-        if (!fitsRight && fitsLeft) {
-            side = 'left';
-        } else if (!fitsRight && !fitsLeft) {
-            // If neither side fits perfectly, choose based on available space
-            const rightSpace = windowWidth - rect.right;
-            const leftSpace = rect.left;
-            side = rightSpace > leftSpace ? 'right' : 'left';
-        }
-        
-        // Calculate vertical position
-        let yOffset = 0;
-        const tooltipBottom = rect.top + tooltipHeight;
-        if (tooltipBottom > windowHeight - 20) {
-            yOffset = windowHeight - tooltipBottom - 20;
-        }
-        
-        return {
-            x: rect.right,
-            y: rect.top,
-            side: side,
-            yOffset: yOffset
-        };
-    };
-
-    // Fungsi untuk handle add user modal
-    const handleAddUserChange = (e) => {
-        setAddUserForm({ ...addUserForm, [e.target.name]: e.target.value });
-    };
-
-    const handleAddUserSubmit = async (e) => {
-        e.preventDefault();
-        setAddUserLoading(true);
-        setAddUserError('');
-        setAddUserSuccess(false);
-        
-        // Convert NRP, id_satuan, dan id_status to integer
-        const submitData = {
-            ...addUserForm,
-            NRP: parseInt(addUserForm.NRP),
-            id_satuan: parseInt(addUserForm.id_satuan),
-            id_status: parseInt(addUserForm.id_status)
-        };
-        
-        console.log('Submitting user data:', submitData);
-        
-        try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            console.log('CSRF Token:', csrfToken);
-            
-            const res = await fetch('/api/create-user', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(submitData)
-            });
-            
-            console.log('Response status:', res.status);
-            const responseData = await res.json();
-            console.log('Response data:', responseData);
-            
-            if (res.ok) {
-                setAddUserSuccess(true);
-                setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '', id_status: '3' });
-                setTimeout(() => {
-                    setShowAddUserModal(false);
-                    setAddUserSuccess(false);
-                }, 2000);
-            } else {
-                // Handle validation errors dengan pesan yang user-friendly
-                if (res.status === 422 && responseData.messages) {
-                    const messages = responseData.messages;
-                    let errorMessage = '';
-                    
-                    if (messages.NRP) {
-                        errorMessage += '⚠️ NRP yang Anda masukkan sudah digunakan. Silakan gunakan NRP yang berbeda.\n';
-                    }
-                    if (messages.username) {
-                        errorMessage += '⚠️ Username sudah digunakan. Silakan pilih username lain.\n';
-                    }
-                    if (messages.Email) {
-                        errorMessage += '⚠️ Email sudah terdaftar. Silakan gunakan email lain.\n';
-                    }
-                    
-                    // Jika ada error lain yang tidak spesifik
-                    Object.entries(messages).forEach(([field, errors]) => {
-                        if (!['NRP', 'username', 'Email'].includes(field)) {
-                            errorMessage += `⚠️ ${field}: ${errors.join(', ')}\n`;
-                        }
-                    });
-                    
-                    setAddUserError(errorMessage.trim());
-                } else {
-                    setAddUserError(responseData.message || responseData.error || 'Gagal menambah user');
-                }
-                console.error('Server error:', responseData);
-            }
-        } catch (err) {
-            console.error('Network error:', err);
-            setAddUserError('Network error: ' + err.message);
-        }
-        
-        setAddUserLoading(false);
-    };
-
-    const closeAddUserModal = () => {
-        setShowAddUserModal(false);
-        setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '', id_status: '3' });
-        setAddUserError('');
-        setAddUserSuccess(false);
-    };
-
     const fetchGudangList = async () => {
         try {
-            const response = await fetch('/api/gudang-list');
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
+            const response = await fetch(`/api/gudang-list?user_role=user&user_site=${encodeURIComponent(userSite)}`);
             const data = await response.json();
-            console.log('🏢 Gudang list response:', data);
-            console.log('📊 Total gudang received:', data.data ? data.data.length : 0);
-            console.log('🔄 Data source:', data.source || 'unknown');
+            console.log('🏢 User Gudang list response:', data);
             
             if (data.data) {
                 setGudangList(data.data);
-                console.log('✅ Gudang list set successfully with', data.data.length, 'items');
-                
-                // Debug: log first 10 gudang
-                console.log('📋 First 10 gudang:', data.data.slice(0, 10).map(g => g.Gudang));
+                console.log('✅ User Gudang list set successfully with', data.data.length, 'items');
             }
         } catch (error) {
-            console.error('❌ Error fetching gudang list:', error);
-        }
-    };
-
-    const fetchSites = async () => {
-        try {
-            setSitesLoading(true);
-            const response = await fetch('/api/site?page=1&per_page=1000');
-            if (response.ok) {
-                const result = await response.json();
-                setSites(result.data || []);
-                console.log('Sites loaded for modal:', result.data?.length || 0);
-            } else {
-                console.error('Failed to fetch sites for modal');
-            }
-        } catch (error) {
-            console.error('Error fetching sites for modal:', error);
-        } finally {
-            setSitesLoading(false);
+            console.error('❌ Error fetching user gudang list:', error);
         }
     };
 
@@ -495,10 +280,13 @@ const WebMonitoringApp = ({ user }) => {
         try {
             setLoading(true);
             
-            // Gunakan pagination normal saja
+            // USER: Always filter by user's site
+            const userSite = user?.site || 'PJKA'; // Use user's actual site
+            const siteParam = `&user_site=${encodeURIComponent(userSite)}`;
+            const roleParam = `&user_role=user`;
             const url = selectedGudang === 'all' 
-                ? `/api/gudang?page=${page}&per_page=${perPage}`
-                : `/api/gudang?filter=${selectedGudang}&page=${page}&per_page=${perPage}`;
+                ? `/api/gudang?page=${page}&per_page=${perPage}${siteParam}${roleParam}`
+                : `/api/gudang?filter=${selectedGudang}&page=${page}&per_page=${perPage}${siteParam}${roleParam}`;
             
             const response = await fetch(url);
             const data = await response.json();
@@ -508,7 +296,7 @@ const WebMonitoringApp = ({ user }) => {
             setTotalPages(data.last_page || 1);
             setTotalItems(data.total || 0);
         } catch (error) {
-            console.error('Error fetching gudang data:', error);
+            console.error('Error fetching user gudang data:', error);
         } finally {
             setLoading(false);
         }
@@ -538,19 +326,6 @@ const WebMonitoringApp = ({ user }) => {
     const handleItemsPerPageChange = (newItemsPerPage) => {
         setItemsPerPage(newItemsPerPage);
         setCurrentPage(1);
-        setShowAll(false);
-    };
-
-    // Handler untuk show all
-    const handleShowAll = () => {
-        setShowAll(true);
-        setCurrentPage(1);
-    };
-
-    // Handler untuk kembali ke pagination
-    const handleShowPaginated = () => {
-        setShowAll(false);
-        setCurrentPage(1);
     };
 
     // Handler untuk pagination transaksi
@@ -573,6 +348,13 @@ const WebMonitoringApp = ({ user }) => {
         }
     };
 
+    // State untuk chart type dan hover status
+    const [activeChartType, setActiveChartType] = useState('status_permintaan');
+    const [hoveredStatus, setHoveredStatus] = useState(null);
+    const [statusDetailData, setStatusDetailData] = useState(null);
+    const [statusDetailLoading, setStatusDetailLoading] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, side: 'right' });
+
     const renderStatusChart = () => {
         const currentData = statusStatistics[activeChartType] || [];
         
@@ -591,14 +373,14 @@ const WebMonitoringApp = ({ user }) => {
             datasets: [{
                 data: currentData.map(item => item.count),
                 backgroundColor: [
-                    '#3B82F6', // blue-500
-                    '#10B981', // emerald-500
-                    '#F59E0B', // amber-500
-                    '#EF4444', // red-500
-                    '#8B5CF6', // violet-500
-                    '#F97316', // orange-500
-                    '#06B6D4', // cyan-500
-                    '#84CC16', // lime-500
+                    '#10B981', // emerald-500 (green theme for user)
+                    '#059669', // emerald-600
+                    '#047857', // emerald-700
+                    '#065f46', // emerald-800
+                    '#064e3b', // emerald-900
+                    '#34d399', // emerald-400
+                    '#6ee7b7', // emerald-300
+                    '#9decf9', // cyan-200
                 ],
                 borderColor: isDarkMode ? '#374151' : '#ffffff',
                 borderWidth: 2,
@@ -610,7 +392,7 @@ const WebMonitoringApp = ({ user }) => {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false, // Hide default legend
+                    display: false,
                 },
                 tooltip: {
                     backgroundColor: isDarkMode ? '#374151' : '#ffffff',
@@ -639,7 +421,6 @@ const WebMonitoringApp = ({ user }) => {
 
         return (
             <div className="flex flex-col lg:flex-row gap-4">
-                {/* Chart Container - 60% width */}
                 <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-3/5 h-96`}>
                     <div className="flex justify-between items-center mb-3">
                         <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>{getChartTitle()}</h3>
@@ -648,13 +429,12 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
                     </div>
                     
-                    {/* Toggle Buttons */}
                     <div className="flex flex-wrap gap-2 mb-4">
                         <button
                             onClick={() => setActiveChartType('status_permintaan')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_permintaan'
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-green-600 text-white'
                                     : isDarkMode 
                                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -666,7 +446,7 @@ const WebMonitoringApp = ({ user }) => {
                             onClick={() => setActiveChartType('status_penerimaan')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_penerimaan'
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-green-600 text-white'
                                     : isDarkMode 
                                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -678,7 +458,7 @@ const WebMonitoringApp = ({ user }) => {
                             onClick={() => setActiveChartType('status_pengiriman')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 activeChartType === 'status_pengiriman'
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-green-600 text-white'
                                     : isDarkMode 
                                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -693,33 +473,21 @@ const WebMonitoringApp = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Details Container - 40% width */}
                 <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-2/5 h-96`}>
-                        <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
+                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
                     <div className="space-y-2">
                         {currentData.map((item, index) => {
                             const percentage = ((item.count / total) * 100).toFixed(1);
                             const backgroundColor = chartData.datasets[0].backgroundColor[index];
-                            const isHovered = hoveredStatus === `${activeChartType}-${item.label}`;
                             
                             return (
                                 <div 
                                     key={item.label} 
-                                    className={`relative flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
+                                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
                                         isDarkMode 
-                                            ? 'bg-gray-700 hover:bg-blue-800' 
-                                            : 'bg-gray-50 hover:bg-blue-50'
+                                            ? 'bg-gray-700 hover:bg-green-800' 
+                                            : 'bg-gray-50 hover:bg-green-50'
                                     }`}
-                                    onMouseEnter={(e) => {
-                                        const position = calculateTooltipPosition(e);
-                                        setTooltipPosition(position);
-                                        setHoveredStatus(`${activeChartType}-${item.label}`);
-                                        fetchStatusDetail(activeChartType, item.label);
-                                    }}
-                                    onMouseLeave={() => {
-                                        setHoveredStatus(null);
-                                        setStatusDetailData(null);
-                                    }}
                                 >
                                     <div className="flex items-center">
                                         <div 
@@ -736,91 +504,6 @@ const WebMonitoringApp = ({ user }) => {
                                             {percentage}%
                                         </div>
                                     </div>
-
-                                    {/* Tooltip with detailed breakdown */}
-                                    {isHovered && statusDetailData && (
-                                        <div 
-                                            className={`fixed z-50 w-80 rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
-                                                tooltipPosition.side === 'left' ? 'transform -translate-x-full' : ''
-                                            } ${
-                                                isDarkMode 
-                                                    ? 'bg-gray-800 border-2 border-blue-400 glow-blue' 
-                                                    : 'bg-white border border-gray-200'
-                                            }`}
-                                            style={{
-                                                left: tooltipPosition.side === 'left' 
-                                                    ? `${tooltipPosition.x - 8}px` 
-                                                    : `${tooltipPosition.x + 8}px`,
-                                                top: `${tooltipPosition.y + (tooltipPosition.yOffset || 0)}px`,
-                                                maxHeight: '400px'
-                                            }}
-                                        >
-                                            {/* Arrow indicator */}
-                                            <div 
-                                                className={`absolute top-4 w-0 h-0 ${
-                                                    tooltipPosition.side === 'left' 
-                                                        ? `right-0 transform translate-x-1 border-l-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-l-gray-800' : 'border-l-white'
-                                                        }` 
-                                                        : `left-0 transform -translate-x-1 border-r-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-r-gray-800' : 'border-r-white'
-                                                        }`
-                                                }`}
-                                                style={{ filter: 'drop-shadow(-1px 0 1px rgba(0,0,0,0.1))' }}
-                                            ></div>
-                                            <div 
-                                                className={`absolute top-4 w-0 h-0 ${
-                                                    tooltipPosition.side === 'left' 
-                                                        ? `right-0 transform translate-x-0.5 border-l-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-l-blue-400' : 'border-l-gray-200'
-                                                        }` 
-                                                        : `left-0 transform -translate-x-0.5 border-r-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-r-blue-400' : 'border-r-gray-200'
-                                                        }`
-                                                }`}
-                                            ></div>
-                                            
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h5 className={`font-semibold ${getTextClasses('primary')}`}>
-                                                    {item.label}
-                                                </h5>
-                                                <span className={`text-sm ${getTextClasses('muted')}`}>
-                                                    {statusDetailData.total_count.toLocaleString()} total
-                                                </span>
-                                            </div>
-                                            
-                                            <div className={`text-xs ${getTextClasses('secondary')} mb-2`}>
-                                                Breakdown by warehouse:
-                                            </div>
-                                            
-                                            <div className="max-h-48 overflow-y-auto space-y-1">
-                                                {statusDetailLoading ? (
-                                                    <div className={`text-xs ${getTextClasses('muted')}`}>Loading...</div>
-                                                ) : statusDetailData.warehouse_breakdown.slice(0, 10).map((warehouse, idx) => (
-                                                    <div key={warehouse.gudang} className={`flex justify-between items-center text-xs py-1 px-2 rounded ${
-                                                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-                                                    }`}>
-                                                        <span className={`${getTextClasses('secondary')} truncate`} title={warehouse.gudang}>
-                                                            {warehouse.gudang}
-                                                        </span>
-                                                        <div className="flex items-center ml-2">
-                                                            <span className={`font-medium ${getTextClasses('primary')}`}>
-                                                                {warehouse.count.toLocaleString()}
-                                                            </span>
-                                                            <span className={`${getTextClasses('muted')} ml-1`}>
-                                                                {warehouse.description}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                {statusDetailData.warehouse_breakdown.length > 10 && (
-                                                    <div className={`text-xs ${getTextClasses('muted')} text-center py-1`}>
-                                                        ... dan {statusDetailData.warehouse_breakdown.length - 10} gudang lainnya
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
@@ -847,23 +530,21 @@ const WebMonitoringApp = ({ user }) => {
             );
         }
 
-        const maxCount = Math.max(...warehouseStatistics.map(item => item.total_activity));
-        
         const chartData = {
             labels: warehouseStatistics.map(item => item.nama_gudang),
             datasets: [
                 {
                     label: 'Outgoing',
                     data: warehouseStatistics.map(item => item.outgoing_count),
-                    backgroundColor: '#3B82F6', // blue-500
-                    borderColor: '#1D4ED8', // blue-700
+                    backgroundColor: '#10B981', // emerald-500 (green theme)
+                    borderColor: '#059669', // emerald-600
                     borderWidth: 1,
                 },
                 {
                     label: 'Incoming', 
                     data: warehouseStatistics.map(item => item.incoming_count),
-                    backgroundColor: '#10B981', // emerald-500
-                    borderColor: '#047857', // emerald-700
+                    backgroundColor: '#34D399', // emerald-400
+                    borderColor: '#10B981', // emerald-500
                     borderWidth: 1,
                 }
             ]
@@ -927,7 +608,6 @@ const WebMonitoringApp = ({ user }) => {
 
         return (
             <div className="flex flex-col lg:flex-row gap-6">
-                {/* Chart */}
                 <div className="flex-1">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>Top Active Warehouses</h3>
@@ -941,7 +621,6 @@ const WebMonitoringApp = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Details */}
                 <div className="lg:w-80">
                     <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Warehouse Details</h4>
                     <div className="space-y-2">
@@ -959,13 +638,13 @@ const WebMonitoringApp = ({ user }) => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div className="flex items-center">
-                                        <div className="w-2 h-2 rounded bg-blue-500 mr-2"></div>
+                                        <div className="w-2 h-2 rounded bg-emerald-500 mr-2"></div>
                                         <span className={getTextClasses('secondary')}>
                                             Out: {warehouse.outgoing_count.toLocaleString()}
                                         </span>
                                     </div>
                                     <div className="flex items-center">
-                                        <div className="w-2 h-2 rounded bg-emerald-500 mr-2"></div>
+                                        <div className="w-2 h-2 rounded bg-emerald-400 mr-2"></div>
                                         <span className={getTextClasses('secondary')}>
                                             In: {warehouse.incoming_count.toLocaleString()}
                                         </span>
@@ -984,136 +663,128 @@ const WebMonitoringApp = ({ user }) => {
             case 'dashboard':
                 return (
                     <div>
-                        {/* Layout baru: Gudang-Site (kiri) dan Login Statistics (kanan) */}
+                        {/* USER Dashboard - Simplified */}
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* Kolom Kiri: Gudang dan Site (atas-bawah) */}
                             <div className="flex flex-col gap-4">
-                                {/* Box Gudang */}
                                 <div className={`${getCardClasses('p-6 w-72')}`}>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className={`${getTextClasses('secondary')} text-sm`}>Gudang</p>
-                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>{dashboardData.gudang.toLocaleString()}</p>
+                                            <p className={`${getTextClasses('secondary')} text-sm`}>Items Site Anda</p>
+                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>{dashboardData.items.toLocaleString()}</p>
                                         </div>
-                                        <div className="bg-blue-600 text-white p-3 rounded-full">
-                                            <span className="text-2xl">🏢</span>
+                                        <div className="bg-green-600 text-white p-3 rounded-full">
+                                            <span className="text-2xl">📦</span>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                {/* Box Site */}
                                 <div className={`${getCardClasses('p-6 w-72')}`}>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className={`${getTextClasses('secondary')} text-sm`}>Site</p>
-                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>{dashboardData.site.toLocaleString()}</p>
+                                            <p className={`${getTextClasses('secondary')} text-sm`}>Site Anda</p>
+                                            <p className={`text-3xl font-bold ${getTextClasses('primary')}`}>1</p>
                                         </div>
-                                        <div className="bg-blue-700 text-white p-3 rounded-full">
+                                        <div className="bg-green-700 text-white p-3 rounded-full">
                                             <span className="text-2xl">🏛️</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Kolom Kanan: Login Statistics */}
                             <div className={`flex-1 ${getCardClasses('p-6')}`}>
                                 <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-3 flex items-center`}>
                                     <span className="text-xl mr-2">📊</span>
-                                    Login Statistics
+                                    Ringkasan Data Site Anda
                                 </h3>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { label: 'Hari Ini', value: loginStats.today, color: 'bg-green-500', icon: '📅' },
-                                        { label: 'Berhasil', value: loginStats.successful, color: 'bg-emerald-500', icon: '✅' },
-                                        { label: 'Gagal', value: loginStats.failed, color: 'bg-red-500', icon: '❌' },
-                                        { label: 'Total', value: loginStats.total, color: 'bg-purple-500', icon: '📊' }
-                                    ].map((stat, index) => (
-                                        <div key={index} className="text-center">
-                                            <div className={`${stat.color} text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1`}>
-                                                <span className="text-sm">{stat.icon}</span>
-                                            </div>
-                                            <p className={`text-lg font-bold ${getTextClasses('primary')}`}>{stat.value.toLocaleString()}</p>
-                                            <p className={`${getTextClasses('secondary')} text-xs`}>{stat.label}</p>
+                                    <div className="text-center">
+                                        <div className="bg-green-500 text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1">
+                                            <span className="text-sm">📦</span>
                                         </div>
-                                    ))}
+                                        <p className={`text-lg font-bold ${getTextClasses('primary')}`}>{dashboardData.items.toLocaleString()}</p>
+                                        <p className={`${getTextClasses('secondary')} text-xs`}>Total Items</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="bg-blue-500 text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1">
+                                            <span className="text-sm">🏢</span>
+                                        </div>
+                                        <p className={`text-lg font-bold ${getTextClasses('primary')}`}>{dashboardData.gudang.toLocaleString()}</p>
+                                        <p className={`${getTextClasses('secondary')} text-xs`}>Gudang</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="bg-purple-500 text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1">
+                                            <span className="text-sm">💳</span>
+                                        </div>
+                                        <p className={`text-lg font-bold ${getTextClasses('primary')}`}>{transaksiTotal.toLocaleString()}</p>
+                                        <p className={`${getTextClasses('secondary')} text-xs`}>Transaksi</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="bg-cyan-500 text-white p-2 rounded-full mx-auto w-8 h-8 flex items-center justify-center mb-1">
+                                            <span className="text-sm">👤</span>
+                                        </div>
+                                        <p className={`text-lg font-bold ${getTextClasses('primary')}`}>1</p>
+                                        <p className={`${getTextClasses('secondary')} text-xs`}>User (Anda)</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Charts Row - Transaction Status Chart & Daily Login Chart */}
-                        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* Transaction Status Chart */}
-                            <div className="flex-1">
-                                <PieChart 
-                                    data={transactionStatusData} 
-                                    title="📈 Status Transaksi"
-                                    compact={false}
-                                />
-                            </div>
-
-                            {/* Daily Login Chart */}
-                            <div className="flex-1">
-                                <LineChart title="📈 Grafik Login Harian (30 Hari Terakhir)" />
-                            </div>
+                        {/* Charts Row - Only Transaction Status Chart */}
+                        <div className="mb-8">
+                            <PieChart 
+                                data={transactionStatusData} 
+                                title="📈 Status Transaksi Site Anda"
+                                compact={false}
+                            />
                         </div>
 
-                        {/* Login Logs Table - Scrollable */}
+                        {/* User Info Card */}
                         <div className={`${getCardClasses('p-6')}`}>
-                            <h3 className={`text-xl font-bold ${getTextClasses('primary')} mb-4`}>Recent Login Activity</h3>
-                            <div className="overflow-x-auto">
-                                <div className={`max-h-96 overflow-y-auto rounded-lg ${
-                                    isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
-                                }`}>
-                                    <table className="min-w-full table-auto">
-                                        <thead className={`sticky top-0 ${
-                                            isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-                                        }`}>
-                                            <tr>
-                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Username</th>
-                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Status</th>
-                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>IP Address</th>
-                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Login Time</th>
-                                                <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>User Agent</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className={`divide-y ${
-                                            isDarkMode 
-                                                ? 'bg-gray-800 divide-gray-600' 
-                                                : 'bg-white divide-gray-200'
-                                        }`}>
-                                            {loginLogs.map((log, index) => (
-                                                <tr key={index} className={`${
-                                                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                                                }`}>
-                                                    <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>{log.username}</td>
-                                                    <td className="px-4 py-3 text-sm">
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                            log.status === 'success' 
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-red-100 text-red-800'
-                                                        }`}>
-                                                            {log.status === 'success' ? '✅ Success' : '❌ Failed'}
-                                                        </span>
-                                                    </td>
-                                                    <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('secondary')}`}>{log.ip_address}</td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
-                                                        {new Date(log.login_time).toLocaleString('id-ID')}
-                                                    </td>
-                                                    <td className={`px-4 py-3 text-sm max-w-xs truncate ${getTextClasses('secondary')}`} title={log.user_agent}>
-                                                        {log.user_agent}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                    {loginLogs.length === 0 && (
-                                        <div className="text-center py-8 text-gray-500">
-                                            Tidak ada data login logs
+                            <h3 className={`text-xl font-bold ${getTextClasses('primary')} mb-4`}>Informasi User</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <h4 className={`font-semibold ${getTextClasses('primary')} mb-2`}>Data Akun</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className={getTextClasses('secondary')}>Username:</span>
+                                            <span className={getTextClasses('primary')}>{user?.username}</span>
                                         </div>
-                                    )}
+                                        <div className="flex justify-between">
+                                            <span className={getTextClasses('secondary')}>Nama:</span>
+                                            <span className={getTextClasses('primary')}>{user?.name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className={getTextClasses('secondary')}>Email:</span>
+                                            <span className={getTextClasses('primary')}>{user?.email}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className={getTextClasses('secondary')}>Status:</span>
+                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                👤 USER
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="mt-2 text-sm text-gray-500 text-center">
-                                    {loginLogs.length > 0 && `Menampilkan ${loginLogs.length} aktivitas login terbaru`}
+                                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                    <h4 className={`font-semibold ${getTextClasses('primary')} mb-2`}>Akses & Permissions</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center">
+                                            <span className="text-green-500 mr-2">✅</span>
+                                            <span className={getTextClasses('secondary')}>Lihat data gudang site</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="text-green-500 mr-2">✅</span>
+                                            <span className={getTextClasses('secondary')}>Lihat transaksi site</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="text-red-500 mr-2">❌</span>
+                                            <span className={getTextClasses('muted')}>Tambah user baru</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <span className="text-red-500 mr-2">❌</span>
+                                            <span className={getTextClasses('muted')}>Akses data site lain</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1122,31 +793,31 @@ const WebMonitoringApp = ({ user }) => {
             case 'gudang':
                 return (
                     <div>
-                        {/* Header dengan Dropdown */}
                         <div className={`${getCardClasses('p-6 mb-6')}`}>
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2`}>Data Gudang</h2>
-                                    <p className={`${getTextClasses('secondary')}`}>Kelola dan pantau data gudang inventaris</p>
+                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2`}>Data Gudang Site Anda</h2>
+                                    <p className={`${getTextClasses('secondary')}`}>Lihat data gudang inventaris di site Anda</p>
                                 </div>
                                 
-                                {/* Dropdown Pilihan Gudang */}
+                                {/* Simplified dropdown for user */}
                                 <div className="mt-4 md:mt-0">
                                     <label htmlFor="gudang-select" className={`block text-sm font-medium ${getTextClasses('secondary')} mb-2`}>
                                         Filter Gudang:
                                     </label>
                                     <div className="custom-dropdown">
                                         <button
+                                            id="gudang-select"
                                             type="button"
                                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                                            className={`relative block w-64 px-3 py-2 text-left rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                                            className={`relative block w-64 px-3 py-2 text-left rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
                                                 isDarkMode 
                                                     ? 'bg-gray-700 border border-gray-600 text-white' 
                                                     : 'bg-white border border-gray-300'
                                             }`}
                                         >
                                             <span className="block truncate">
-                                                {selectedGudang === 'all' ? '🏢 Semua Gudang' : `📦 ${selectedGudang}`}
+                                                {selectedGudang === 'all' ? '🏢 Semua Gudang Site' : `📦 ${selectedGudang}`}
                                             </span>
                                             <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                                                 <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1159,7 +830,6 @@ const WebMonitoringApp = ({ user }) => {
                                             <div className={`custom-dropdown-content ${
                                                 isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
                                             }`}>
-                                                {/* Search Input */}
                                                 <div className={`p-2 border-b ${
                                                     isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
                                                 }`}>
@@ -1168,7 +838,7 @@ const WebMonitoringApp = ({ user }) => {
                                                         placeholder="🔍 Cari gudang..."
                                                         value={searchGudang}
                                                         onChange={(e) => setSearchGudang(e.target.value)}
-                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
                                                             isDarkMode 
                                                                 ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
                                                                 : 'bg-white border border-gray-300 text-gray-900'
@@ -1177,12 +847,11 @@ const WebMonitoringApp = ({ user }) => {
                                                     />
                                                 </div>
                                                 
-                                                {/* Gudang Options */}
                                                 <div className="max-h-60 overflow-y-auto">
                                                     <div 
                                                         className={`custom-dropdown-item ${
                                                             selectedGudang === 'all' 
-                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                ? (isDarkMode ? 'bg-green-800 text-green-300' : 'bg-green-50 text-green-700')
                                                                 : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
                                                         }`}
                                                         onClick={() => {
@@ -1191,7 +860,7 @@ const WebMonitoringApp = ({ user }) => {
                                                             setSearchGudang('');
                                                         }}
                                                     >
-                                                        🏢 Semua Gudang
+                                                        🏢 Semua Gudang Site
                                                     </div>
                                                     {gudangList
                                                         .filter(gudang => 
@@ -1202,7 +871,7 @@ const WebMonitoringApp = ({ user }) => {
                                                                 key={index}
                                                                 className={`custom-dropdown-item ${
                                                                     selectedGudang === gudang.Gudang 
-                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                        ? (isDarkMode ? 'bg-green-800 text-green-300' : 'bg-green-50 text-green-700')
                                                                         : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
                                                                 }`}
                                                                 onClick={() => {
@@ -1216,7 +885,6 @@ const WebMonitoringApp = ({ user }) => {
                                                         ))
                                                     }
                                                     
-                                                    {/* No results message */}
                                                     {searchGudang && gudangList.filter(gudang => 
                                                         gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
                                                     ).length === 0 && (
@@ -1233,23 +901,23 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
 
                         {/* Info Summary */}
-                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 mb-6 border border-blue-200">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 mb-6 border border-green-200">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-blue-800 font-semibold">
+                                    <p className="text-green-800 font-semibold">
                                         {selectedGudang === 'all' 
-                                            ? `Total Semua Gudang: ${totalItems.toLocaleString()} item` 
+                                            ? `Total Gudang Site Anda: ${totalItems.toLocaleString()} item` 
                                             : `Data untuk: ${selectedGudang}`
                                         }
                                     </p>
-                                    <p className="text-blue-600 text-sm">
+                                    <p className="text-green-600 text-sm">
                                         {totalItems > 0 
                                             ? `Halaman ${currentPage} dari ${totalPages} | Menampilkan ${gudangData.length} dari ${totalItems.toLocaleString()} item` 
                                             : 'Belum ada data'
                                         }
                                     </p>
                                 </div>
-                                <div className="text-blue-600">
+                                <div className="text-green-600">
                                     <span className="text-2xl">🏢</span>
                                 </div>
                             </div>
@@ -1270,7 +938,7 @@ const WebMonitoringApp = ({ user }) => {
                                                 setItemsPerPage(parseInt(e.target.value));
                                                 setCurrentPage(1);
                                             }}
-                                            className={`px-3 py-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                            className={`px-3 py-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                                                 isDarkMode 
                                                     ? 'bg-gray-700 border border-gray-600 text-white' 
                                                     : 'bg-white border border-gray-300 text-gray-900'
@@ -1279,7 +947,6 @@ const WebMonitoringApp = ({ user }) => {
                                             <option value={10}>10</option>
                                             <option value={25}>25</option>
                                             <option value={50}>50</option>
-                                            <option value={100}>100</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1292,7 +959,7 @@ const WebMonitoringApp = ({ user }) => {
 
                         {/* Tabel Data Barang di Gudang */}
                         <div className={`${getCardClasses('p-6')}`}>
-                            <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-4`}>Data Barang di Gudang</h3>
+                            <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-4`}>Data Barang di Gudang Site Anda</h3>
                             
                             {gudangData.length > 0 ? (
                                 <div className="overflow-x-auto">
@@ -1311,8 +978,6 @@ const WebMonitoringApp = ({ user }) => {
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Rak</th>
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Jumlah</th>
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Satuan</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Harga</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody className={`divide-y ${
@@ -1325,12 +990,12 @@ const WebMonitoringApp = ({ user }) => {
                                                         isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                                                     }`}>
                                                         <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.item_id}</td>
-                                                        <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{item.part_number}</td>
+                                                        <td className="px-4 py-3 text-sm text-green-600 font-semibold">{item.part_number}</td>
                                                         <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`} title={item.nama_barang}>
                                                             <div className="max-w-48 truncate">{item.nama_barang}</div>
                                                         </td>
                                                         <td className="px-4 py-3 text-sm">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                                 🏢 {item.gudang}
                                                             </span>
                                                         </td>
@@ -1339,12 +1004,6 @@ const WebMonitoringApp = ({ user }) => {
                                                             {item.jumlah || '0'}
                                                         </td>
                                                         <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.satuan || '-'}</td>
-                                                        <td className={`px-4 py-3 text-sm text-right ${getTextClasses('primary')}`}>-</td>
-                                                        <td className="px-4 py-3 text-sm">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                                ✅ ACTIVE
-                                                            </span>
-                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1354,8 +1013,8 @@ const WebMonitoringApp = ({ user }) => {
                                     {/* Loading State */}
                                     {loading && (
                                         <div className="text-center py-4">
-                                            <div className="inline-flex items-center px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg">
-                                                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <div className="inline-flex items-center px-4 py-2 text-sm text-green-600 bg-green-50 rounded-lg">
+                                                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
@@ -1377,7 +1036,7 @@ const WebMonitoringApp = ({ user }) => {
                                                     className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                                         currentPage === 1 || loading
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                            : 'bg-green-500 text-white hover:bg-green-600'
                                                     }`}
                                                 >
                                                     ← Previous
@@ -1404,7 +1063,7 @@ const WebMonitoringApp = ({ user }) => {
                                                                 disabled={loading}
                                                                 className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                                                     currentPage === pageNum
-                                                                        ? 'bg-blue-600 text-white'
+                                                                        ? 'bg-green-600 text-white'
                                                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                                 }`}
                                                             >
@@ -1420,7 +1079,7 @@ const WebMonitoringApp = ({ user }) => {
                                                     className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                                         currentPage === totalPages || loading
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                            : 'bg-green-500 text-white hover:bg-green-600'
                                                     }`}
                                                 >
                                                     Next →
@@ -1439,7 +1098,7 @@ const WebMonitoringApp = ({ user }) => {
                                     <p className="text-lg font-medium">Belum ada data barang</p>
                                     <p className="text-sm">
                                         {selectedGudang === 'all' 
-                                            ? 'Tidak ada data barang tersedia'
+                                            ? 'Tidak ada data barang tersedia di site Anda'
                                             : `Tidak ada data barang untuk gudang: ${selectedGudang}`
                                         }
                                     </p>
@@ -1447,12 +1106,14 @@ const WebMonitoringApp = ({ user }) => {
                             )}
                         </div>
 
-                        {/* Stock Chart - Grafik Pie Chart Stock */}
+                        {/* Stock Chart */}
                         <div className="mt-8">
                             <SafeStockPieChart 
                                 selectedGudang={selectedGudang} 
-                                title="📊 Distribusi Stock Barang"
+                                title="📊 Distribusi Stock Barang Site Anda"
                                 isDarkMode={isDarkMode}
+                                siteFilter={user?.id_satuan}
+                                userRole="user"
                             />
                         </div>
                     </div>
@@ -1460,12 +1121,11 @@ const WebMonitoringApp = ({ user }) => {
             case 'transaksi':
                 return (
                     <div className="space-y-6">
-                        {/* Container untuk Table Transaksi */}
                         <div className={`${getCardClasses('p-6')}`}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                 <span className="text-2xl mr-2">💳</span>
-                                Data Transaksi
+                                Data Transaksi Site Anda
                             </h2>
                             <div className={`text-sm ${getTextClasses('secondary')}`}>
                                 Total: {transaksiTotal.toLocaleString()} transaksi
@@ -1475,23 +1135,23 @@ const WebMonitoringApp = ({ user }) => {
                         {/* Filter Gudang */}
                         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex items-center space-x-4">
-                                <label className={`text-sm font-medium ${getTextClasses('secondary')}`}>Filter Gudang:</label>
+                                <label htmlFor="transaksi-gudang-filter" className={`text-sm font-medium ${getTextClasses('secondary')}`}>Filter Gudang:</label>
                                 <select
+                                    id="transaksi-gudang-filter"
                                     value={selectedTransaksiGudang}
                                     onChange={(e) => {
                                         const newFilter = e.target.value;
-                                        console.log('🔄 Changing filter to:', newFilter);
+                                        console.log('🔄 User changing filter to:', newFilter);
                                         setSelectedTransaksiGudang(newFilter);
                                         setTransaksiCurrentPage(1);
-                                        // Note: fetchTransaksiData will be called by useEffect
                                     }}
-                                    className={`px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                                    className={`px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
                                         isDarkMode 
                                             ? 'bg-gray-700 border border-gray-600 text-white' 
                                             : 'bg-white border border-gray-300 text-gray-900'
                                     }`}
                                 >
-                                    <option value="all">Semua Gudang ({transaksiGudangList.length})</option>
+                                    <option value="all">Semua Gudang Site ({transaksiGudangList.length})</option>
                                     {transaksiGudangList.map((gudang, index) => (
                                         <option key={index} value={gudang.gudang}>
                                             {gudang.gudang}
@@ -1501,7 +1161,7 @@ const WebMonitoringApp = ({ user }) => {
                             </div>
                             <div className="text-sm text-gray-500">
                                 {selectedTransaksiGudang !== 'all' && (
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
                                         Filter: {selectedTransaksiGudang}
                                     </span>
                                 )}
@@ -1511,7 +1171,7 @@ const WebMonitoringApp = ({ user }) => {
                         {transaksiLoading ? (
                             <div className="flex justify-center items-center py-12">
                                 <div className="text-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
                                     <p className={`mt-4 ${getTextClasses('secondary')}`}>Loading data transaksi...</p>
                                 </div>
                             </div>
@@ -1528,11 +1188,9 @@ const WebMonitoringApp = ({ user }) => {
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Nama Barang</th>
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Dari Gudang</th>
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Ke Gudang</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Reg Sista</th>
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Permintaan</th>
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Penerimaan</th>
                                                 <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Pengiriman</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Site</th>
                                             </tr>
                                         </thead>
                                         <tbody className={`divide-y ${
@@ -1551,7 +1209,6 @@ const WebMonitoringApp = ({ user }) => {
                                                     </td>
                                                     <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dari_gudang || '-'}</td>
                                                     <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.ke_gudang || '-'}</td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dipasang_di_no_reg_sista || '-'}</td>
                                                     <td className="px-4 py-3 text-sm">
                                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                                             item.status_permintaan === 'Diproses' 
@@ -1585,7 +1242,6 @@ const WebMonitoringApp = ({ user }) => {
                                                             {item.status_pengiriman || '-'}
                                                         </span>
                                                     </td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.site || '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1595,7 +1251,7 @@ const WebMonitoringApp = ({ user }) => {
                                 {transaksiData.length === 0 && !transaksiLoading && (
                                     <div className="text-center py-12">
                                         <div className={`text-6xl mb-4 ${getTextClasses('muted')}`}>📄</div>
-                                        <p className={`text-lg ${getTextClasses('muted')}`}>Tidak ada data transaksi</p>
+                                        <p className={`text-lg ${getTextClasses('muted')}`}>Tidak ada data transaksi di site Anda</p>
                                     </div>
                                 )}
 
@@ -1635,7 +1291,7 @@ const WebMonitoringApp = ({ user }) => {
                                                         disabled={transaksiLoading}
                                                         className={`px-3 py-2 text-sm font-medium rounded-lg ${
                                                             transaksiCurrentPage === pageNum
-                                                                ? 'bg-blue-600 text-white'
+                                                                ? 'bg-green-600 text-white'
                                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                                         }`}
                                                     >
@@ -1683,7 +1339,7 @@ const WebMonitoringApp = ({ user }) => {
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                     <span className="text-2xl mr-2">🏭</span>
-                                    Top Active Warehouses
+                                    Top Active Warehouses Site Anda
                                 </h2>
                             </div>
 
@@ -1720,41 +1376,36 @@ const WebMonitoringApp = ({ user }) => {
                     box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
                 }
             `}</style>
-            {/* Fixed Collapsible Sidebar */}
+            
+            {/* USER Sidebar - Green theme */}
             <aside className={`group fixed left-0 top-0 h-screen w-16 hover:w-80 backdrop-blur border-r text-white flex flex-col transition-all duration-300 ease-in-out z-50 ${
                 isDarkMode 
                     ? 'bg-gray-800/95 border-green-400 sidebar-glow' 
-                    : 'bg-cyan-900/90 border-cyan-500'
+                    : 'bg-green-900/90 border-green-500'
             }`}>
                 <div className="p-4 group-hover:p-6">
                     <div className="flex items-center">
-                        <h1 className="text-2xl font-bold text-cyan-400 group-hover:text-3xl transition-all duration-300">S</h1>
-                        <span className="ml-2 text-xl font-bold text-cyan-400 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">IMTELOG</span>
+                        <h1 className="text-2xl font-bold text-green-400 group-hover:text-3xl transition-all duration-300">U</h1>
+                        <span className="ml-2 text-xl font-bold text-green-400 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">SER PORTAL</span>
                     </div>
                 </div>
                 
-                {/* Menu Navigation */}
+                {/* Menu Navigation - Limited for User */}
                 <nav className="flex-1 px-2 group-hover:px-6 transition-all duration-300">
                     <div className="space-y-2">
                         {[
                             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
                             { id: 'gudang', label: 'Gudang', icon: '🏢' },
-                            { id: 'transaksi', label: 'Transaksi', icon: '💳' },
-                            { id: 'add-user', label: 'Tambah User', icon: '👤' }
+                            { id: 'transaksi', label: 'Transaksi', icon: '💳' }
+                            // Note: No 'add-user' for regular users
                         ].map(menu => (
                             <button
                                 key={menu.id}
-                                onClick={() => {
-                                    if (menu.id === 'add-user') {
-                                        setShowAddUserModal(true);
-                                    } else {
-                                        setActiveTab(menu.id);
-                                    }
-                                }}
+                                onClick={() => setActiveTab(menu.id)}
                                 className={`w-full flex items-center space-x-3 px-2 group-hover:px-4 py-3 rounded-lg transition-all duration-300 text-left relative ${
                                     activeTab === menu.id
-                                        ? 'bg-cyan-500 text-white'
-                                        : 'text-cyan-300 hover:bg-cyan-800/50 hover:text-cyan-100'
+                                        ? 'bg-green-500 text-white'
+                                        : 'text-green-300 hover:bg-green-800/50 hover:text-green-100'
                                 }`}
                                 title={menu.label}
                             >
@@ -1771,7 +1422,7 @@ const WebMonitoringApp = ({ user }) => {
                 <div className="px-2 group-hover:px-6 py-2 transition-all duration-300">
                     <button
                         onClick={toggleDarkMode}
-                        className="w-full flex items-center justify-center group-hover:justify-start space-x-2 p-2 rounded-lg hover:bg-cyan-800/50 transition-all duration-300"
+                        className="w-full flex items-center justify-center group-hover:justify-start space-x-2 p-2 rounded-lg hover:bg-green-800/50 transition-all duration-300"
                         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                     >
                         <span className="text-lg">
@@ -1784,21 +1435,21 @@ const WebMonitoringApp = ({ user }) => {
                 </div>
                 
                 {/* User info dan logout di bawah */}
-                <div className="p-2 group-hover:p-6 border-t border-cyan-500 transition-all duration-300">
+                <div className="p-2 group-hover:p-6 border-t border-green-500 transition-all duration-300">
                     <div className="mb-2 group-hover:mb-4">
                         <div className="text-center group-hover:text-left">
-                            <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center mx-auto group-hover:mx-0 mb-2 group-hover:mb-0">
+                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto group-hover:mx-0 mb-2 group-hover:mb-0">
                                 <span className="text-white font-bold text-sm">{user?.name?.charAt(0)}</span>
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">
-                                <p className="font-semibold text-cyan-100 text-sm">{user?.name}</p>
-                                <p className="text-cyan-400 text-xs">@{user?.username}</p>
+                                <p className="font-semibold text-green-100 text-sm">{user?.name}</p>
+                                <p className="text-green-400 text-xs">@{user?.username} (USER)</p>
                             </div>
                         </div>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full bg-cyan-500 hover:bg-cyan-400 px-2 group-hover:px-4 py-2 rounded transition-all duration-300 flex items-center justify-center group-hover:justify-start space-x-2"
+                        className="w-full bg-green-500 hover:bg-green-400 px-2 group-hover:px-4 py-2 rounded transition-all duration-300 flex items-center justify-center group-hover:justify-start space-x-2"
                         title="Logout"
                     >
                         <span className="text-sm">🚪</span>
@@ -1809,173 +1460,14 @@ const WebMonitoringApp = ({ user }) => {
                 </div>
             </aside>
 
-            {/* Main Content Area - dengan margin left untuk memberikan ruang sidebar */}
+            {/* Main Content Area */}
             <div className="ml-16 min-h-screen flex flex-col">
-                {/* Main Content */}
                 <main className="flex-1 px-8 py-8">
                     {renderContent()}
                 </main>
             </div>
-
-            {/* Modal Add User */}
-            {showAddUserModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-blue-700">Tambah User Baru</h2>
-                            <button
-                                onClick={closeAddUserModal}
-                                className="text-gray-500 hover:text-gray-700 text-2xl"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        
-                        <form onSubmit={handleAddUserSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                                    <input 
-                                        type="text" 
-                                        name="username" 
-                                        value={addUserForm.username} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan username"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                                    <input 
-                                        type="password" 
-                                        name="password" 
-                                        value={addUserForm.password} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan password"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Nama</label>
-                                    <input 
-                                        type="text" 
-                                        name="Nama" 
-                                        value={addUserForm.Nama} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan nama lengkap"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">NRP</label>
-                                    <input 
-                                        type="number" 
-                                        name="NRP" 
-                                        value={addUserForm.NRP} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan NRP (angka)"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                    <input 
-                                        type="email" 
-                                        name="Email" 
-                                        value={addUserForm.Email} 
-                                        onChange={handleAddUserChange} 
-                                        required 
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Masukkan email"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Site</label>
-                                    {sitesLoading ? (
-                                        <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                                            Memuat data site...
-                                        </div>
-                                    ) : (
-                                        <select
-                                            name="id_satuan"
-                                            value={addUserForm.id_satuan}
-                                            onChange={handleAddUserChange}
-                                            required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                        >
-                                            <option value="">Pilih Site</option>
-                                            {sites.map((site) => (
-                                                <option key={site.id} value={site.id}>
-                                                    {site.Location}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                                    <select
-                                        name="id_status"
-                                        value={addUserForm.id_status}
-                                        onChange={handleAddUserChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                    >
-                                        <option value="1">Super Admin</option>
-                                        <option value="2">Admin</option>
-                                        <option value="3">User</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div className="flex gap-4 pt-4">
-                                <button 
-                                    type="button"
-                                    onClick={closeAddUserModal}
-                                    className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button 
-                                    type="submit" 
-                                    disabled={addUserLoading} 
-                                    className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition"
-                                >
-                                    {addUserLoading ? 'Menyimpan...' : 'Tambah User'}
-                                </button>
-                            </div>
-                            
-                            {addUserSuccess && (
-                                <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-4">
-                                    <div className="flex items-center">
-                                        <span className="text-green-400 text-xl mr-2">✅</span>
-                                        <p className="text-sm font-medium text-green-800">
-                                            User berhasil ditambahkan!
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {addUserError && (
-                                <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-4">
-                                    <div className="flex items-center">
-                                        <span className="text-red-400 text-xl mr-2">❌</span>
-                                        <p className="text-sm font-medium text-red-800">
-                                            {addUserError}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
-export default WebMonitoringApp;
+export default UserDashboard;
