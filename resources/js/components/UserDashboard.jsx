@@ -109,6 +109,8 @@ const UserDashboard = ({ user }) => {
         fetchDashboardData();
         fetchTransactionStatusData();
         fetchGudangList();
+        // Fetch gudang data immediately for tab display
+        fetchGudangData(1, itemsPerPage);
     }, []);
 
     useEffect(() => {
@@ -288,15 +290,24 @@ const UserDashboard = ({ user }) => {
                 ? `/api/gudang?page=${page}&per_page=${perPage}${siteParam}${roleParam}`
                 : `/api/gudang?filter=${selectedGudang}&page=${page}&per_page=${perPage}${siteParam}${roleParam}`;
             
+            console.log('🔄 Fetching gudang data from URL:', url);
             const response = await fetch(url);
             const data = await response.json();
+            console.log('📦 Gudang data response:', data);
             
             setGudangData(data.data || []);
             setCurrentPage(data.current_page || 1);
             setTotalPages(data.last_page || 1);
             setTotalItems(data.total || 0);
+            
+            console.log('✅ Gudang data set:', {
+                dataLength: (data.data || []).length,
+                currentPage: data.current_page || 1,
+                totalPages: data.last_page || 1,
+                totalItems: data.total || 0
+            });
         } catch (error) {
-            console.error('Error fetching user gudang data:', error);
+            console.error('❌ Error fetching user gudang data:', error);
         } finally {
             setLoading(false);
         }

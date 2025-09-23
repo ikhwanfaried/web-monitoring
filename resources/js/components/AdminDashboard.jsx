@@ -608,8 +608,310 @@ const AdminDashboard = ({ user }) => {
         }
     };
 
-    // [... Rest of the render functions would be identical to WebMonitoringApp ...]
-    // For brevity, I'll include just the main render function and key differences
+    // Render function for status chart visualization
+    const renderStatusChart = () => {
+        const currentData = statusStatistics[activeChartType] || [];
+        
+        if (currentData.length === 0) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className={`${getTextClasses('muted')}`}>No data available</div>
+                </div>
+            );
+        }
+
+        const total = currentData.reduce((sum, item) => sum + item.count, 0);
+        
+        const chartData = {
+            labels: currentData.map(item => item.label),
+            datasets: [{
+                data: currentData.map(item => item.count),
+                backgroundColor: [
+                    '#EA580C', // orange-600 (admin theme)
+                    '#DC2626', // red-600
+                    '#D97706', // amber-600
+                    '#CA8A04', // yellow-600
+                    '#65A30D', // lime-600
+                    '#FB923C', // orange-400
+                    '#FCD34D', // amber-300
+                    '#FEF3C7', // amber-100
+                ],
+                borderColor: isDarkMode ? '#374151' : '#ffffff',
+                borderWidth: 2,
+            }]
+        };
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                    titleColor: isDarkMode ? '#ffffff' : '#000000',
+                    bodyColor: isDarkMode ? '#ffffff' : '#000000',
+                    borderColor: isDarkMode ? '#6B7280' : '#e5e7eb',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        };
+
+        const getChartTitle = () => {
+            switch(activeChartType) {
+                case 'status_permintaan': return 'Status Permintaan';
+                case 'status_penerimaan': return 'Status Penerimaan';
+                case 'status_pengiriman': return 'Status Pengiriman';
+                default: return 'Status Chart';
+            }
+        };
+
+        return (
+            <div className="flex flex-col lg:flex-row gap-4">
+                <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-3/5 h-96`}>
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>{getChartTitle()}</h3>
+                        <div className={`text-sm ${getTextClasses('secondary')}`}>
+                            Total: {total.toLocaleString()} transaksi
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        <button
+                            onClick={() => setActiveChartType('status_permintaan')}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_permintaan'
+                                    ? 'bg-orange-600 text-white'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Permintaan
+                        </button>
+                        <button
+                            onClick={() => setActiveChartType('status_penerimaan')}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_penerimaan'
+                                    ? 'bg-orange-600 text-white'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Penerimaan
+                        </button>
+                        <button
+                            onClick={() => setActiveChartType('status_pengiriman')}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                activeChartType === 'status_pengiriman'
+                                    ? 'bg-orange-600 text-white'
+                                    : isDarkMode 
+                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            Pengiriman
+                        </button>
+                    </div>
+
+                    <div className="h-56">
+                        <Doughnut data={chartData} options={options} />
+                    </div>
+                </div>
+
+                <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-2/5 h-96`}>
+                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
+                    <div className="space-y-2">
+                        {currentData.map((item, index) => {
+                            const percentage = ((item.count / total) * 100).toFixed(1);
+                            const backgroundColor = chartData.datasets[0].backgroundColor[index];
+                            
+                            return (
+                                <div 
+                                    key={item.label} 
+                                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
+                                        isDarkMode 
+                                            ? 'bg-gray-700 hover:bg-orange-800' 
+                                            : 'bg-gray-50 hover:bg-orange-50'
+                                    }`}
+                                >
+                                    <div className="flex items-center">
+                                        <div 
+                                            className="w-4 h-4 rounded mr-3"
+                                            style={{ backgroundColor }}
+                                        ></div>
+                                        <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>{item.label}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className={`text-sm font-semibold ${getTextClasses('primary')}`}>
+                                            {item.count.toLocaleString()}
+                                        </div>
+                                        <div className={`text-xs ${getTextClasses('muted')}`}>
+                                            {percentage}%
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Render function for top active warehouses
+    const renderTopWarehouses = () => {
+        if (warehouseLoading) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className={`${getTextClasses('muted')}`}>Loading warehouse statistics...</div>
+                </div>
+            );
+        }
+
+        if (warehouseStatistics.length === 0) {
+            return (
+                <div className="flex items-center justify-center h-64">
+                    <div className={`${getTextClasses('muted')}`}>No warehouse data available</div>
+                </div>
+            );
+        }
+
+        const chartData = {
+            labels: warehouseStatistics.map(item => item.nama_gudang),
+            datasets: [
+                {
+                    label: 'Outgoing',
+                    data: warehouseStatistics.map(item => item.outgoing_count),
+                    backgroundColor: '#EA580C', // orange-600 (admin theme)
+                    borderColor: '#DC2626', // red-600
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Incoming', 
+                    data: warehouseStatistics.map(item => item.incoming_count),
+                    backgroundColor: '#FB923C', // orange-400
+                    borderColor: '#EA580C', // orange-600
+                    borderWidth: 1,
+                }
+            ]
+        };
+
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        color: isDarkMode ? '#ffffff' : '#374151',
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                    titleColor: isDarkMode ? '#ffffff' : '#374151',
+                    bodyColor: isDarkMode ? '#ffffff' : '#374151',
+                    borderColor: isDarkMode ? '#6B7280' : '#D1D5DB',
+                    borderWidth: 1,
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const warehouseIndex = context.dataIndex;
+                            const warehouse = warehouseStatistics[warehouseIndex];
+                            return `Total Activity: ${warehouse.total_activity.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        display: false,
+                        color: isDarkMode ? '#4B5563' : '#F3F4F6',
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 0,
+                        color: isDarkMode ? '#ffffff' : '#374151',
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: {
+                        color: isDarkMode ? '#4B5563' : '#F3F4F6',
+                    },
+                    ticks: {
+                        color: isDarkMode ? '#ffffff' : '#374151',
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        return (
+            <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>Top Active Warehouses</h3>
+                        <div className={`text-sm ${getTextClasses('secondary')}`}>
+                            Top {warehouseStatistics.length} most active warehouses
+                        </div>
+                    </div>
+                    
+                    <div className="h-80">
+                        <Bar data={chartData} options={options} />
+                    </div>
+                </div>
+
+                <div className="lg:w-80">
+                    <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Warehouse Details</h4>
+                    <div className="space-y-2">
+                        {warehouseStatistics.map((warehouse, index) => (
+                            <div key={warehouse.nama_gudang} className={`p-3 rounded-lg ${
+                                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>
+                                        {warehouse.nama_gudang}
+                                    </span>
+                                    <span className={`text-sm font-semibold ${getTextClasses('primary')}`}>
+                                        {warehouse.total_activity.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="flex items-center">
+                                        <div className="w-2 h-2 rounded bg-orange-600 mr-2"></div>
+                                        <span className={getTextClasses('secondary')}>
+                                            Out: {warehouse.outgoing_count.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <div className="w-2 h-2 rounded bg-orange-400 mr-2"></div>
+                                        <span className={getTextClasses('secondary')}>
+                                            In: {warehouse.incoming_count.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -900,15 +1202,15 @@ const AdminDashboard = ({ user }) => {
                         {/* Header */}
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
-                                <h2 className={`text-2xl font-bold ${getTextColor()}`}>Data Transaksi</h2>
-                                <p className={`mt-2 ${getSecondaryTextColor()}`}>Kelola data transaksi inventaris di site Anda</p>
+                                <h2 className={`text-2xl font-bold ${getTextClasses('primary')}`}>Data Transaksi</h2>
+                                <p className={`mt-2 ${getTextClasses('secondary')}`}>Kelola data transaksi inventaris di site Anda</p>
                             </div>
                         </div>
 
                         {/* Filter dan Controls */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex items-center space-x-4">
-                                <label htmlFor="transaksi-filter" className={`text-sm font-medium ${getSecondaryTextColor()}`}>Filter Gudang:</label>
+                                <label htmlFor="transaksi-filter" className={`text-sm font-medium ${getTextClasses('secondary')}`}>Filter Gudang:</label>
                                 <select
                                     id="transaksi-filter"
                                     value={selectedTransaksiGudang}
@@ -932,7 +1234,7 @@ const AdminDashboard = ({ user }) => {
                             </div>
                             
                             <div className="flex items-center space-x-4">
-                                <label htmlFor="transaksi-per-page" className={`text-sm font-medium ${getSecondaryTextColor()}`}>Per halaman:</label>
+                                <label htmlFor="transaksi-per-page" className={`text-sm font-medium ${getTextClasses('secondary')}`}>Per halaman:</label>
                                 <select
                                     id="transaksi-per-page"
                                     value={transaksiPerPage}
@@ -959,9 +1261,49 @@ const AdminDashboard = ({ user }) => {
                             isDarkMode ? 'bg-gray-800' : 'bg-white'
                         } shadow-sm`}>
                             <div className="text-center">
-                                <span className={`text-lg font-semibold ${getTextColor()}`}>
+                                <span className={`text-lg font-semibold ${getTextClasses('primary')}`}>
                                     Total: {transaksiTotal.toLocaleString()} transaksi
                                 </span>
+                            </div>
+                        </div>
+
+                        {/* Status Statistics Visualization */}
+                        <div className="mb-8">
+                            <div className={`${getCardClasses('p-6')}`}>
+                                <div className="flex items-center mb-4">
+                                    <span className="text-2xl mr-3">📊</span>
+                                    <h3 className={`text-xl font-bold ${getTextClasses('primary')}`}>
+                                        Analisis Status Transaksi
+                                    </h3>
+                                </div>
+                                {statusChartLoading ? (
+                                    <div className="flex items-center justify-center h-64">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                                        <span className={`ml-2 ${getTextClasses('secondary')}`}>Loading status statistics...</span>
+                                    </div>
+                                ) : (
+                                    renderStatusChart()
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Top Active Warehouses Visualization */}
+                        <div className="mb-8">
+                            <div className={`${getCardClasses('p-6')}`}>
+                                <div className="flex items-center mb-4">
+                                    <span className="text-2xl mr-3">🏭</span>
+                                    <h3 className={`text-xl font-bold ${getTextClasses('primary')}`}>
+                                        Top Active Warehouses
+                                    </h3>
+                                </div>
+                                {warehouseLoading ? (
+                                    <div className="flex items-center justify-center h-64">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                                        <span className={`ml-2 ${getTextClasses('secondary')}`}>Loading warehouse statistics...</span>
+                                    </div>
+                                ) : (
+                                    renderTopWarehouses()
+                                )}
                             </div>
                         </div>
 
@@ -972,7 +1314,7 @@ const AdminDashboard = ({ user }) => {
                             {transaksiLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                                    <span className={`ml-2 ${getSecondaryTextColor()}`}>Loading...</span>
+                                    <span className={`ml-2 ${getTextClasses('secondary')}`}>Loading...</span>
                                 </div>
                             ) : (
                                 <>
@@ -980,22 +1322,22 @@ const AdminDashboard = ({ user }) => {
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
                                                 <tr>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Nomor Dokumen
                                                     </th>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Part Number
                                                     </th>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Nama Barang
                                                     </th>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Dari Gudang
                                                     </th>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Ke Gudang
                                                     </th>
-                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getSecondaryTextColor()}`}>
+                                                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('secondary')}`}>
                                                         Status
                                                     </th>
                                                 </tr>
@@ -1003,29 +1345,29 @@ const AdminDashboard = ({ user }) => {
                                             <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                                                 {transaksiData.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan="6" className={`px-6 py-4 text-center ${getSecondaryTextColor()}`}>
+                                                        <td colSpan="6" className={`px-6 py-4 text-center ${getTextClasses('secondary')}`}>
                                                             Tidak ada data transaksi
                                                         </td>
                                                     </tr>
                                                 ) : (
                                                     transaksiData.map((item) => (
                                                         <tr key={item.id} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${getTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${getTextClasses('primary')}`}>
                                                                 {item.nomor_dokumen}
                                                             </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getSecondaryTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getTextClasses('secondary')}`}>
                                                                 {item.part_number}
                                                             </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getSecondaryTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getTextClasses('secondary')}`}>
                                                                 {item.nama_barang || '-'}
                                                             </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getSecondaryTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getTextClasses('secondary')}`}>
                                                                 {item.dari_gudang || '-'}
                                                             </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getSecondaryTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getTextClasses('secondary')}`}>
                                                                 {item.ke_gudang || '-'}
                                                             </td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getSecondaryTextColor()}`}>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${getTextClasses('secondary')}`}>
                                                                 <div className="space-y-1">
                                                                     {item.status_permintaan && (
                                                                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -1055,7 +1397,7 @@ const AdminDashboard = ({ user }) => {
                                     {transaksiTotalPages > 1 && (
                                         <div className={`px-6 py-3 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
                                             <div className="flex items-center justify-between">
-                                                <div className={`text-sm ${getSecondaryTextColor()}`}>
+                                                <div className={`text-sm ${getTextClasses('secondary')}`}>
                                                     Halaman {transaksiCurrentPage} dari {transaksiTotalPages}
                                                 </div>
                                                 <div className="flex space-x-2">

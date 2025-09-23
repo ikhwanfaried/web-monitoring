@@ -43,30 +43,29 @@ class DashboardController extends Controller
             $userSite = $request->get('user_site', 'PJKA'); // Default site untuk user
 
             if ($userRole === 'user') {
-                // User hanya melihat data dari site tertentu
+                // User hanya melihat data dari site tertentu - gunakan dataset2 untuk konsistensi
+                $dataset2Count = DB::table('dataset2')
+                    ->where('Lanud/Depo', 'LIKE', '%' . $userSite . '%')
+                    ->count();
+                
                 $data = [
-                    'items' => DB::table('items')
-                        ->where('Site', $userSite)
-                        ->count(),
-                    'dataset2' => DB::table('dataset2')
-                        ->where('Lanud/Depo', 'LIKE', '%' . $userSite . '%')
-                        ->count(),
+                    'items' => $dataset2Count, // Gunakan dataset2 count untuk konsistensi dengan gudang
+                    'dataset2' => $dataset2Count,
                     'gudang' => DB::table('gudang')
                         ->where('Site', $userSite)
                         ->count(),
                     'site' => 1, // User hanya melihat satu site
                 ];
             } elseif ($userRole === 'admin' && $siteFilter) {
-                // Admin melihat data dari site mereka
+                // Admin melihat data dari site mereka - gunakan dataset2 untuk konsistensi
+                $dataset2Count = DB::table('dataset2')
+                    ->join('site', 'dataset2.id_satuan', '=', 'site.id')
+                    ->where('site.id', $siteFilter)
+                    ->count();
+                
                 $data = [
-                    'items' => DB::table('items')
-                        ->join('site', 'items.id_satuan', '=', 'site.id')
-                        ->where('site.id', $siteFilter)
-                        ->count(),
-                    'dataset2' => DB::table('dataset2')
-                        ->join('site', 'dataset2.id_satuan', '=', 'site.id')
-                        ->where('site.id', $siteFilter)
-                        ->count(),
+                    'items' => $dataset2Count, // Gunakan dataset2 count untuk konsistensi
+                    'dataset2' => $dataset2Count,
                     'gudang' => DB::table('gudang')
                         ->join('site', 'gudang.id_satuan', '=', 'site.id')
                         ->where('site.id', $siteFilter)
@@ -74,10 +73,11 @@ class DashboardController extends Controller
                     'site' => 1,
                 ];
             } else {
-                // SuperAdmin melihat semua data
+                // SuperAdmin melihat semua data - gunakan dataset2 untuk konsistensi
+                $dataset2Count = DB::table('dataset2')->count();
                 $data = [
-                    'items' => DB::table('items')->count(),
-                    'dataset2' => DB::table('dataset2')->count(),
+                    'items' => $dataset2Count, // Gunakan dataset2 count untuk konsistensi
+                    'dataset2' => $dataset2Count,
                     'gudang' => DB::table('gudang')->count(),
                     'site' => DB::table('site')->count(),
                 ];
