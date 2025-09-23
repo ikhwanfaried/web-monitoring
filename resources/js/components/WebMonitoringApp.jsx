@@ -1728,8 +1728,14 @@ const WebMonitoringApp = ({ user }) => {
             }`}>
                 <div className="p-4 group-hover:p-6">
                     <div className="flex items-center">
-                        <h1 className="text-2xl font-bold text-cyan-400 group-hover:text-3xl transition-all duration-300">S</h1>
-                        <span className="ml-2 text-xl font-bold text-cyan-400 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">IMTELOG</span>
+                        <div className="w-8 h-8 group-hover:w-10 group-hover:h-10 transition-all duration-300 flex-shrink-0">
+                            <img 
+                                src="/images/Lambang_TNI_AU.png" 
+                                alt="Logo TNI AU" 
+                                className="w-full h-full object-contain"
+                            />
+                        </div>
+                        <span className="ml-3 text-xl font-bold text-cyan-400 opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 whitespace-nowrap">AIRLOGS</span>
                     </div>
                 </div>
                 
@@ -1768,41 +1774,36 @@ const WebMonitoringApp = ({ user }) => {
                 </nav>
                 
                 {/* Dark Mode Toggle */}
-                <div className="px-2 group-hover:px-6 py-2 transition-all duration-300">
+                <div className="px-2 group-hover:px-6 py-2 transition-all duration-300 overflow-hidden">
                     <button
                         onClick={toggleDarkMode}
-                        className="w-full flex items-center justify-center group-hover:justify-start space-x-2 p-2 rounded-lg hover:bg-cyan-800/50 transition-all duration-300"
+                        className="w-full flex items-center justify-center group-hover:justify-start space-x-2 p-2 rounded-lg hover:bg-cyan-800/50 transition-all duration-300 overflow-hidden"
                         title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                     >
-                        <span className="text-lg">
+                        <span className="text-lg flex-shrink-0">
                             {isDarkMode ? '☀️' : '🌙'}
                         </span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 text-sm font-medium">
+                        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 text-sm font-medium whitespace-nowrap overflow-hidden">
                             {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                         </span>
                     </button>
                 </div>
                 
                 {/* User info dan logout di bawah */}
-                <div className="p-2 group-hover:p-6 border-t border-cyan-500 transition-all duration-300">
+                <div className="p-2 group-hover:p-6 border-t border-cyan-500 transition-all duration-300 overflow-hidden">
                     <div className="mb-2 group-hover:mb-4">
-                        <div className="text-center group-hover:text-left">
-                            <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center mx-auto group-hover:mx-0 mb-2 group-hover:mb-0">
-                                <span className="text-white font-bold text-sm">{user?.name?.charAt(0)}</span>
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">
-                                <p className="font-semibold text-cyan-100 text-sm">{user?.name}</p>
-                                <p className="text-cyan-400 text-xs">@{user?.username}</p>
-                            </div>
+                        <div className="flex flex-col items-center text-center w-full">
+                            <p className="font-semibold text-cyan-100 text-sm truncate opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">{user?.name}</p>
+                            <p className="text-cyan-400 text-xs truncate opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150">{user?.username}</p>
                         </div>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full bg-cyan-500 hover:bg-cyan-400 px-2 group-hover:px-4 py-2 rounded transition-all duration-300 flex items-center justify-center group-hover:justify-start space-x-2"
+                        className="w-full bg-cyan-500 hover:bg-cyan-400 px-2 group-hover:px-4 py-2 rounded transition-all duration-300 flex items-center justify-center group-hover:justify-start space-x-2 overflow-hidden"
                         title="Logout"
                     >
-                        <span className="text-sm">🚪</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 text-sm font-medium">
+                        <span className="text-sm flex-shrink-0">🚪</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 text-sm font-medium whitespace-nowrap overflow-hidden">
                             Logout
                         </span>
                     </button>

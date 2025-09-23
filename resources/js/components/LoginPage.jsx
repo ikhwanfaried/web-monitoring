@@ -50,9 +50,65 @@ const LoginPage = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-800">
-            <div className="bg-cyan-900/50 border border-cyan-500 p-8 rounded-lg shadow-2xl backdrop-blur w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-6 text-center text-cyan-400">Login</h2>
+        <div className="min-h-screen flex items-center justify-center bg-slate-800 relative overflow-hidden">
+            {/* Curved Text Background - Outside the box */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="relative w-[800px] h-[800px]">
+                    {/* Upper Arc Text */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 800">
+                        <defs>
+                            <path
+                                id="upperArc"
+                                d="M 110 400 A 280 280 0 0 1 690 400"
+                                fill="none"
+                            />
+                            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#FFD700" />
+                                <stop offset="50%" stopColor="#FFA500" />
+                                <stop offset="100%" stopColor="#FFD700" />
+                            </linearGradient>
+                        </defs>
+                        <text className="text-4xl font-bold tracking-[0.3em] opacity-90">
+                            <textPath href="#upperArc" startOffset="50%" textAnchor="middle" fill="url(#goldGradient)">
+                                AIR FORCE LOGISTICS SYSTEM
+                            </textPath>
+                        </text>
+                    </svg>
+                    
+                    {/* Lower Arc Text */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 800">
+                        <defs>
+                            <path
+                                id="lowerArc"
+                                d="M 690 400 A 280 280 0 0 1 110 400"
+                                fill="none"
+                            />
+                            <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#1E40AF" />
+                                <stop offset="50%" stopColor="#3B82F6" />
+                                <stop offset="100%" stopColor="#1E40AF" />
+                            </linearGradient>
+                        </defs>
+                        <text className="text-4xl font-bold tracking-[0.3em] opacity-90">
+                            <textPath href="#lowerArc" startOffset="50%" textAnchor="middle" fill="url(#blueGradient)">
+                                ANGKATAN UDARA
+                            </textPath>
+                        </text>
+                    </svg>
+                </div>
+            </div>
+
+            {/* Login Form */}
+            <div className="bg-cyan-900/50 border border-cyan-500 p-8 rounded-lg shadow-2xl backdrop-blur w-full max-w-md relative z-10">
+                {/* Logo TNI AU */}
+                <div className="text-center mb-6">
+                    <img 
+                        src="/images/Lambang_TNI_AU.png" 
+                        alt="Logo TNI AU" 
+                        className="h-20 w-20 mx-auto mb-4 object-contain"
+                    />
+                </div>
+                <h2 className="text-2xl font-bold mb-6 text-center text-cyan-400">AIRLOGS</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-6">
                         
