@@ -1042,13 +1042,87 @@ const WebMonitoringApp = ({ user }) => {
 
                         {/* Charts Row - Transaction Status Chart & Daily Login Chart */}
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* Transaction Status Chart */}
+                            {/* Transaction Status Chart with Details */}
                             <div className="flex-1">
-                                <PieChart 
-                                    data={transactionStatusData} 
-                                    title="📈 Status Transaksi"
-                                    compact={false}
-                                />
+                                <div className={`${getCardClasses('p-6')}`}>
+                                    <h3 className={`text-lg font-semibold ${getTextClasses('primary')} mb-4 text-center`}>
+                                        📈 Status Transaksi
+                                    </h3>
+                                    <div className="flex flex-col lg:flex-row gap-6">
+                                        {/* Chart Section */}
+                                        <div className="flex-1">
+                                            <div className="h-80 w-full flex justify-center items-center">
+                                                <div className="h-full w-full max-w-sm">
+                                                    <PieChart 
+                                                        data={transactionStatusData} 
+                                                        title=""
+                                                        compact={false}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Details Section */}
+                                        <div className="lg:w-80 flex flex-col justify-center">
+                                            <div className={`${getCardClasses('p-4 border-l-4 border-blue-500')}`}>
+                                                <h4 className={`text-md font-semibold ${getTextClasses('primary')} mb-3`}>
+                                                    � Detail Status Transaksi
+                                                </h4>
+                                                <div className="space-y-3">
+                                                    {transactionStatusData.map((item, index) => {
+                                                        const total = transactionStatusData.reduce((sum, d) => sum + d.value, 0);
+                                                        const percentage = ((item.value / total) * 100).toFixed(1);
+                                                        
+                                                        // Color mapping untuk konsistensi dengan chart
+                                                        const getStatusColor = (name) => {
+                                                            if (name && name.toLowerCase().includes('kasubdis')) return '#000000';
+                                                            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FF8000'];
+                                                            return colors[index % colors.length];
+                                                        };
+                                                        
+                                                        return (
+                                                            <div key={index} className={`flex items-center justify-between p-2 rounded-md ${
+                                                                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
+                                                            } transition-colors duration-200`}>
+                                                                <div className="flex items-center">
+                                                                    <div 
+                                                                        className="w-4 h-4 rounded-full mr-3 border-2 border-white shadow-sm" 
+                                                                        style={{ backgroundColor: getStatusColor(item.name) }}
+                                                                    ></div>
+                                                                    <span className={`text-sm font-medium ${getTextClasses('primary')}`}>
+                                                                        {item.name}
+                                                                    </span>
+                                                                </div>
+                                                                <div className={`text-right ${getTextClasses('secondary')}`}>
+                                                                    <div className={`text-lg font-bold ${getTextClasses('primary')}`}>
+                                                                        {item.value.toLocaleString()}
+                                                                    </div>
+                                                                    <div className="text-xs">
+                                                                        {percentage}%
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                {/* Summary */}
+                                                <div className={`mt-4 pt-3 border-t ${
+                                                    isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                                                }`}>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className={`text-sm font-medium ${getTextClasses('primary')}`}>
+                                                            Total Transaksi:
+                                                        </span>
+                                                        <span className={`text-lg font-bold ${getTextClasses('primary')}`}>
+                                                            {transactionStatusData.reduce((sum, item) => sum + item.value, 0).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Daily Login Chart */}

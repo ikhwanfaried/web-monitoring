@@ -177,7 +177,7 @@ const PieChart = ({ data, title, compact = false }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className={`${title ? 'bg-white rounded-lg shadow-md p-6' : ''}`}>
       {title && (
         <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
           {title}

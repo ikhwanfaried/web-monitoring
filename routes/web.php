@@ -14,6 +14,16 @@ Route::get('/user', [DashboardController::class, 'userDashboard'])->name('user.d
 Route::get('/add-user', function () {
     return view('add-user');
 });
+Route::get('/test-sqlsrv', function(){
+    try{
+        $db = DB::connection('sqlsrv');
+        return 'Connected as : ' . $db->getConfig('username');
+    } catch (\Exception $e){
+        return 'Connection failed: ' . $e->getMessage();
+    }
+})  ;  
+
+
 
 // API Routes
 Route::prefix('api')->group(function () {
@@ -39,3 +49,4 @@ Route::prefix('api')->group(function () {
 Route::fallback(function () {
     return view('app');
 });
+
