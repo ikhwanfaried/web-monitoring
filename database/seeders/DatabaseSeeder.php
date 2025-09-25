@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             GudangSiteSeeder::class,
             Dataset2Seeder::class,
+            Dataset2TambahanSeeder::class,
             Transaksi1Seeder::class,
             Transaksi2Seeder::class,
             Dataset40200Seeder::class,

@@ -503,16 +503,20 @@ class DashboardController extends Controller
                     'source' => 'gudang_table_filtered_by_admin'
                 ]);
             } else {
-                // SuperAdmin melihat semua gudang
-                $gudangList = DB::table('gudang')
-                    ->select('Location as Gudang')
-                    ->orderBy('Location')
+                // SuperAdmin melihat gudang yang ada di dataset2 (inventory data)
+                $gudangList = DB::table('dataset2')
+                    ->select('Gudang')
+                    ->whereNotNull('Gudang')
+                    ->where('Gudang', '!=', '')
+                    ->where('Gudang', '!=', ' ')
+                    ->groupBy('Gudang')
+                    ->orderBy('Gudang')
                     ->get();
 
                 return response()->json([
                     'data' => $gudangList,
                     'total_count' => $gudangList->count(),
-                    'source' => 'gudang_table'
+                    'source' => 'dataset2_table'
                 ]);
             }
         } catch (\Exception $e) {

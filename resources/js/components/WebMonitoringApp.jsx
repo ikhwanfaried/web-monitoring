@@ -936,7 +936,7 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
                     </div>
                     
-                    <div className="h-80">
+                    <div className="h-64">
                         <Bar data={chartData} options={options} />
                     </div>
                 </div>
@@ -944,7 +944,7 @@ const WebMonitoringApp = ({ user }) => {
                 {/* Details */}
                 <div className="lg:w-80">
                     <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Warehouse Details</h4>
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
                         {warehouseStatistics.map((warehouse, index) => (
                             <div key={warehouse.nama_gudang} className={`p-3 rounded-lg ${
                                 isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
@@ -1461,7 +1461,7 @@ const WebMonitoringApp = ({ user }) => {
                 return (
                     <div className="space-y-6">
                         {/* Container untuk Table Transaksi */}
-                        <div className={`${getCardClasses('p-6')}`}>
+                        <div className={`${getCardClasses('p-6')} max-h-[600px]`}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                 <span className="text-2xl mr-2">💳</span>
@@ -1517,22 +1517,22 @@ const WebMonitoringApp = ({ user }) => {
                             </div>
                         ) : (
                             <div>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full table-auto">
+                                <div className="overflow-auto max-h-64 border rounded">
+                                    <table className="w-full table-fixed text-sm">
                                         <thead className={`${
                                             isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
                                         }`}>
                                             <tr>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Nomor Dokumen</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Part Number</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Nama Barang</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Dari Gudang</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Ke Gudang</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Reg Sista</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Permintaan</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Penerimaan</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Status Pengiriman</th>
-                                                <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${getTextClasses('muted')}`}>Site</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>No. Dok</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>Part No</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-32`}>Nama Barang</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Dari</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Ke</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Reg</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Req</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Rcv</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Ship</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Site</th>
                                             </tr>
                                         </thead>
                                         <tbody className={`divide-y ${
@@ -1544,48 +1544,48 @@ const WebMonitoringApp = ({ user }) => {
                                                 <tr key={item.id || index} className={`${
                                                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                                                 }`}>
-                                                    <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>{item.nomor_dokumen || '-'}</td>
-                                                    <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.part_number || '-'}</td>
-                                                    <td className={`px-4 py-3 text-sm max-w-xs truncate ${getTextClasses('primary')}`} title={item.nama_barang || 'Nama barang tidak ditemukan'}>
+                                                    <td className={`px-2 py-2 text-xs font-medium ${getTextClasses('primary')} truncate`} title={item.nomor_dokumen}>{item.nomor_dokumen || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs font-mono ${getTextClasses('primary')} truncate`} title={item.part_number}>{item.part_number || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('primary')} truncate`} title={item.nama_barang || 'Nama barang tidak ditemukan'}>
                                                         {item.nama_barang || '-'}
                                                     </td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dari_gudang || '-'}</td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.ke_gudang || '-'}</td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.dipasang_di_no_reg_sista || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm">
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.dari_gudang}>{item.dari_gudang || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.ke_gudang}>{item.ke_gudang || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.dipasang_di_no_reg_sista}>{item.dipasang_di_no_reg_sista || '-'}</td>
+                                                    <td className="px-2 py-2 text-xs">
+                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
                                                             item.status_permintaan === 'Diproses' 
                                                                 ? 'bg-yellow-100 text-yellow-800'
                                                                 : item.status_permintaan === 'Selesai'
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {item.status_permintaan || '-'}
+                                                        }`} title={item.status_permintaan}>
+                                                            {item.status_permintaan?.substring(0,3) || '-'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm">
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    <td className="px-2 py-2 text-xs">
+                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
                                                             item.status_penerimaan === 'COMPLETE' 
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : item.status_penerimaan === 'NONE'
                                                                 ? 'bg-gray-100 text-gray-800'
                                                                 : 'bg-blue-100 text-blue-800'
-                                                        }`}>
-                                                            {item.status_penerimaan || '-'}
+                                                        }`} title={item.status_penerimaan}>
+                                                            {item.status_penerimaan?.substring(0,3) || '-'}
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm">
-                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    <td className="px-2 py-2 text-xs">
+                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
                                                             item.status_pengiriman === 'SHIPPED' 
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : item.status_pengiriman === 'ENTERED'
                                                                 ? 'bg-blue-100 text-blue-800'
                                                                 : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {item.status_pengiriman || '-'}
+                                                        }`} title={item.status_pengiriman}>
+                                                            {item.status_pengiriman?.substring(0,3) || '-'}
                                                         </span>
                                                     </td>
-                                                    <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.site || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.site}>{item.site || '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1679,7 +1679,7 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
 
                         {/* Container untuk Top Active Warehouses */}
-                        <div className={`${getCardClasses('p-6')}`}>
+                        <div className={`${getCardClasses('p-6')} max-h-[600px]`}>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                     <span className="text-2xl mr-2">🏭</span>
