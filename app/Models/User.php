@@ -37,8 +37,9 @@ class User extends Authenticatable
         'Nama',
         'NRP',
         'Email',
-        'id_satuan',
+        'siteid',
         'id_status',
+        'locid',
     ];
 
     /**

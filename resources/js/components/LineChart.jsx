@@ -24,18 +24,20 @@ ChartJS.register(
   Filler
 );
 
-const LineChart = ({ title = 'Login Harian (30 Hari Terakhir)' }) => {
+const LineChart = ({ title = 'Login Harian (30 Hari Terakhir)', siteFilter = null }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDailyLoginData();
-  }, []);
+    // re-fetch when siteFilter changes
+  }, [siteFilter]);
 
   const fetchDailyLoginData = async () => {
     try {
-      const response = await fetch('/api/daily-login-chart');
+      const url = siteFilter ? `/api/daily-login-chart?site_filter=${encodeURIComponent(siteFilter)}` : '/api/daily-login-chart';
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch data');
       const result = await response.json();
       setData(result);

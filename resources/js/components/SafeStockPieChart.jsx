@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Barang', isDarkMode = false }) => {
+const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Barang', isDarkMode = false, siteFilter = null, userLocId = null, userRole = null }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -9,6 +9,10 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Hover tooltip state
+  const [hoveredSegment, setHoveredSegment] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   // Helper functions for consistent styling
   const getCardClasses = (baseClasses = '') => {
@@ -32,27 +36,79 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
 
   useEffect(() => {
     fetchStockData();
-  }, [selectedGudang]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedGudang, siteFilter, userLocId, userRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStockData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const url = selectedGudang === 'all' 
-        ? '/api_stock_chart.php'
-        : `/api_stock_chart.php?filter=${encodeURIComponent(selectedGudang)}`;
+      let url = '/api_stock_chart.php';
+      const params = new URLSearchParams();
+      
+      // Add filter parameter if not 'all'
+      if (selectedGudang !== 'all') {
+        params.append('filter', selectedGudang);
+      }
+      
+      // Add USER location filter (highest priority)
+      if (userRole === 'user' && userLocId) {
+        params.append('user_locid', userLocId);
+        params.append('user_role', 'user');
+      }
+      // Add site filter if provided (for Admin role)
+      else if (siteFilter) {
+        params.append('site_filter', siteFilter);
+      }
+      
+      // Build final URL
+      const queryString = params.toString();
+      if (queryString) {
+        url += '?' + queryString;
+      }
       
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const result = await response.json();
       
-      if (!Array.isArray(result)) {
-        throw new Error('Invalid data format: expected array');
+      // Handle both old format (array) and new format (object with data and debug)
+      let chartData;
+      let debugInfo;
+      
+      if (Array.isArray(result)) {
+        // Old format
+        chartData = result;
+        debugInfo = null;
+      } else if (result.data && Array.isArray(result.data)) {
+        // New format with debug info
+        chartData = result.data;
+        debugInfo = result.debug;
+      } else {
+        throw new Error('Invalid data format: expected array or object with data property');
       }
       
-      setData(result);
+      console.log('📊 SafeStockPieChart - Raw result:', result);
+      console.log('📊 SafeStockPieChart - Data received:', chartData);
+      console.log('📊 SafeStockPieChart - Debug Info:', debugInfo);
+      console.log('📊 SafeStockPieChart - selectedGudang:', selectedGudang);
+      console.log('📊 SafeStockPieChart - siteFilter:', siteFilter);
+      console.log('📊 SafeStockPieChart - userLocId:', userLocId);
+      console.log('📊 SafeStockPieChart - userRole:', userRole);
+      console.log('📊 SafeStockPieChart - URL called:', url);
+      
+      // Log detailed breakdown of each category
+      chartData.forEach((category, index) => {
+        console.log(`📊 Category ${index + 1}:`, {
+          name: category.name,
+          value: category.value,
+          items_sample: category.items?.length || 0
+        });
+      });
+      
+      console.log('📊 SafeStockPieChart - About to setData with:', chartData);
+      setData(chartData);
+      console.log('📊 SafeStockPieChart - Data state updated');
       
     } catch (err) {
       console.error('Error fetching stock data:', err);
@@ -74,9 +130,25 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
         stockCondition = 'siap';
       }
 
-      const url = selectedGudang === 'all' 
-        ? `/api_stock_chart.php?detail=${stockCondition}`
-        : `/api_stock_chart.php?filter=${encodeURIComponent(selectedGudang)}&detail=${stockCondition}`;
+      const params = new URLSearchParams();
+      params.append('detail', stockCondition);
+      
+      // Add filter parameter if not 'all'
+      if (selectedGudang !== 'all') {
+        params.append('filter', selectedGudang);
+      }
+      
+      // Add USER location filter (highest priority)
+      if (userRole === 'user' && userLocId) {
+        params.append('user_locid', userLocId);
+        params.append('user_role', 'user');
+      }
+      // Add site filter if provided (for Admin role)
+      else if (siteFilter) {
+        params.append('site_filter', siteFilter);
+      }
+      
+      const url = `/api_stock_chart.php?${params.toString()}`;
       
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch category details');
@@ -85,6 +157,7 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
       // Debug: log data yang diterima
       console.log(`Fetched category details for ${category}:`, result);
       console.log(`Total items received: ${result.items ? result.items.length : 0}`);
+      console.log(`URL called:`, url);
       
       return result.items || [];
     } catch (err) {
@@ -129,17 +202,28 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
     }
   }, [searchTerm]);
 
-  // Calculate totals
+  // Calculate totals with extra safety checks
   const totalItems = Array.isArray(data) ? data.reduce((sum, item) => {
-    return sum + (typeof item?.value === 'number' ? item.value : 0);
+    const value = item?.value;
+    return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
   }, 0) : 0;
   
   const stockHabis = Array.isArray(data) ? 
-    (data.find(item => item?.name === 'Stock Habis')?.value || 0) : 0;
+    (data.find(item => item?.name === 'Stock Habis')?.value ?? 0) : 0;
   const stockMenupis = Array.isArray(data) ? 
-    (data.find(item => item?.name === 'Stock Menipis')?.value || 0) : 0;
+    (data.find(item => item?.name === 'Stock Menipis')?.value ?? 0) : 0;
   const stockSiapPakai = Array.isArray(data) ? 
-    (data.find(item => item?.name === 'Siap Pakai')?.value || 0) : 0;
+    (data.find(item => item?.name === 'Siap Pakai')?.value ?? 0) : 0;
+  
+  // Debug: Log calculated totals
+  console.log('📊 SafeStockPieChart - Calculated Totals:', {
+    totalItems,
+    stockHabis,
+    stockMenupis,
+    stockSiapPakai,
+    sum: stockHabis + stockMenupis + stockSiapPakai,
+    rawData: data
+  });
 
   // Create simple SVG pie chart
   const createPieChart = () => {
@@ -186,12 +270,33 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
           strokeWidth="2"
           className="cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => handleCategoryClick(item.name)}
+          onMouseEnter={(e) => {
+            const rect = e.target.getBoundingClientRect();
+            setTooltipPosition({
+              x: e.clientX,
+              y: e.clientY
+            });
+            setHoveredSegment({
+              name: item.name,
+              value: item.value,
+              percentage: ((item.value / totalItems) * 100).toFixed(1)
+            });
+          }}
+          onMouseMove={(e) => {
+            setTooltipPosition({
+              x: e.clientX,
+              y: e.clientY
+            });
+          }}
+          onMouseLeave={() => {
+            setHoveredSegment(null);
+          }}
         />
       );
     });
 
     return (
-      <svg width="200" height="200" viewBox="0 0 200 200">
+      <svg width="400" height="400" viewBox="0 0 200 200">
         {segments}
       </svg>
     );
@@ -242,14 +347,14 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center gap-6">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
         {/* Simple SVG Pie Chart */}
         <div className="flex-shrink-0">
           {createPieChart()}
         </div>
 
         {/* Statistik Detail */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 max-w-md space-y-4">
           <div className="grid grid-cols-1 gap-3">
             {/* Stock Habis */}
             <div 
@@ -510,6 +615,30 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Hover Tooltip */}
+      {hoveredSegment && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x + 10}px`,
+            top: `${tooltipPosition.y - 10}px`,
+            transform: 'translate(0, -100%)'
+          }}
+        >
+          <div className={`px-3 py-2 rounded-lg shadow-lg border max-w-xs ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-600 text-white' 
+              : 'bg-white border-gray-200 text-gray-900'
+          }`}>
+            <div className="text-sm font-semibold">{hoveredSegment.name}</div>
+            <div className="text-xs text-gray-500">
+              <div>{hoveredSegment.value.toLocaleString()} items</div>
+              <div>{hoveredSegment.percentage}% dari total</div>
+            </div>
           </div>
         </div>
       )}

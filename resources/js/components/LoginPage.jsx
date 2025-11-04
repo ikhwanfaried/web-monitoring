@@ -11,12 +11,15 @@ const LoginPage = ({ onLogin }) => {
         setLoading(true);
         setError('');
         try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || ''
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ username, password }),
             });
             const result = await response.json();
@@ -100,12 +103,12 @@ const LoginPage = ({ onLogin }) => {
 
             {/* Login Form */}
             <div className="bg-cyan-900/50 border border-cyan-500 p-8 rounded-lg shadow-2xl backdrop-blur w-full max-w-md relative z-10">
-                {/* Logo TNI AU */}
+                {/* Logo AIRLOGS */}
                 <div className="text-center mb-6">
                     <img 
-                        src="/images/Lambang_TNI_AU.png" 
-                        alt="Logo TNI AU" 
-                        className="h-20 w-20 mx-auto mb-4 object-contain"
+                        src="/images/logo_airlogs.png" 
+                        alt="Logo AIRLOGS" 
+                        className="h-32 w-32 mx-auto mb-4 object-contain"
                     />
                 </div>
                 <h2 className="text-2xl font-bold mb-6 text-center text-cyan-400">AIRLOGS</h2>

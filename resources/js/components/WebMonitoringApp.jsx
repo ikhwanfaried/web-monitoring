@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import PieChart from './PieChart';
+import BarChart from './BarChart';
 import LineChart from './LineChart';
 import SafeStockPieChart from './SafeStockPieChart';
+import SuccessModal from './SuccessModal';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
@@ -37,6 +38,15 @@ const WebMonitoringApp = ({ user }) => {
     const [itemsPerPage, setItemsPerPage] = useState(25);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [searchGudang, setSearchGudang] = useState('');
+    const [filterItemId, setFilterItemId] = useState('');
+    const [filterPartNumber, setFilterPartNumber] = useState('');
+    const [filterNamaBarang, setFilterNamaBarang] = useState('all');
+    const [namaBarangDropdownOpen, setNamaBarangDropdownOpen] = useState(false);
+    const [searchNamaBarang, setSearchNamaBarang] = useState('');
+    const [namaBarangList, setNamaBarangList] = useState([]);
+    const [filterSite, setFilterSite] = useState('all');
+    const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+    const [searchSite, setSearchSite] = useState('');
 
     // State untuk transaksi
     const [transaksiData, setTransaksiData] = useState([]);
@@ -48,6 +58,18 @@ const WebMonitoringApp = ({ user }) => {
     const [showAll, setShowAll] = useState(false);
     const [selectedTransaksiGudang, setSelectedTransaksiGudang] = useState('all');
     const [transaksiGudangList, setTransaksiGudangList] = useState([]);
+    const [transaksiGudangDropdownOpen, setTransaksiGudangDropdownOpen] = useState(false);
+    const [searchTransaksiGudang, setSearchTransaksiGudang] = useState('');
+    const [selectedTransaksiGudangTujuan, setSelectedTransaksiGudangTujuan] = useState('all');
+    const [transaksiGudangTujuanDropdownOpen, setTransaksiGudangTujuanDropdownOpen] = useState(false);
+    const [searchTransaksiGudangTujuan, setSearchTransaksiGudangTujuan] = useState('');
+    const [filterTransaksiNoDok, setFilterTransaksiNoDok] = useState('');
+    const [filterTransaksiPartNumber, setFilterTransaksiPartNumber] = useState('');
+    const [filterTransaksiNoReg, setFilterTransaksiNoReg] = useState('');
+    const [filterTransaksiNamaBarang, setFilterTransaksiNamaBarang] = useState('all');
+    const [transaksiNamaBarangDropdownOpen, setTransaksiNamaBarangDropdownOpen] = useState(false);
+    const [searchTransaksiNamaBarang, setSearchTransaksiNamaBarang] = useState('');
+    const [transaksiNamaBarangList, setTransaksiNamaBarangList] = useState([]);
 
     // State untuk status chart
     const [statusStatistics, setStatusStatistics] = useState({
@@ -82,7 +104,7 @@ const WebMonitoringApp = ({ user }) => {
         Nama: '',
         NRP: '',
         Email: '',
-        id_satuan: '',
+        siteid: '',
         id_status: '3' // Default ke User (3)
     });
     const [addUserLoading, setAddUserLoading] = useState(false);
@@ -91,14 +113,84 @@ const WebMonitoringApp = ({ user }) => {
     const [sites, setSites] = useState([]);
     const [sitesLoading, setSitesLoading] = useState(true);
 
+    // State untuk edit/delete user modals
+    const [showEditUserModal, setShowEditUserModal] = useState(false);
+    const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [showEditOptionsModal, setShowEditOptionsModal] = useState(false);
+    const [userToEdit, setUserToEdit] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
+
+    // State untuk modal gudang dan site
+    const [showGudangModal, setShowGudangModal] = useState(false);
+    const [showSiteModal, setShowSiteModal] = useState(false);
+    const [gudangModalData, setGudangModalData] = useState([]);
+    const [siteModalData, setSiteModalData] = useState([]);
+    const [gudangModalPage, setGudangModalPage] = useState(1);
+    const [siteModalPage, setSiteModalPage] = useState(1);
+    const [gudangModalTotal, setGudangModalTotal] = useState(0);
+    const [siteModalTotal, setSiteModalTotal] = useState(0);
+    const [gudangModalLoading, setGudangModalLoading] = useState(false);
+    const [siteModalLoading, setSiteModalLoading] = useState(false);
+    const itemsPerModalPage = 10;
+    
+    // State untuk form input gudang dan site
+    const [showAddGudangModal, setShowAddGudangModal] = useState(false);
+    const [showAddSiteModal, setShowAddSiteModal] = useState(false);
+    const [addGudangForm, setAddGudangForm] = useState({ location: '', idsite: '' });
+    const [addSiteForm, setAddSiteForm] = useState({ siteid: '' });
+    const [siteList, setSiteList] = useState([]);
+    const [addGudangLoading, setAddGudangLoading] = useState(false);
+    const [addSiteLoading, setAddSiteLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [editUserSearch, setEditUserSearch] = useState('');
+    const [deleteUserSearch, setDeleteUserSearch] = useState('');
+
+    // State untuk edit form
+    const [showEditFormModal, setShowEditFormModal] = useState(false);
+    const [editField, setEditField] = useState('');
+    const [editValue, setEditValue] = useState('');
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState('');
+    const [editSuccess, setEditSuccess] = useState(false);
+    const [rolesList, setRolesList] = useState([]);
+
+    // State untuk users
+    const [usersData, setUsersData] = useState([]);
+    const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+    const [usersTotalPages, setUsersTotalPages] = useState(1);
+    const [usersTotal, setUsersTotal] = useState(0);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [usersPerPage, setUsersPerPage] = useState(15);
+    const [searchUsers, setSearchUsers] = useState('');
+
     // Simple tab change function
     const changeTab = (tabName) => {
         setActiveTab(tabName);
     };
 
-    const handleLogout = () => {
-        // Redirect ke halaman login
-        window.location.href = '/';
+    const handleLogout = async () => {
+        try {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+            });
+            
+            if (response.ok) {
+                window.location.href = '/login';
+            } else {
+                console.error('Logout failed');
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/login';
+        }
     };
 
     const toggleDarkMode = () => {
@@ -150,7 +242,11 @@ const WebMonitoringApp = ({ user }) => {
         fetchLoginStats();
         fetchTransactionStatusData();
         fetchGudangList();
+        fetchNamaBarangList();
+        fetchTransaksiNamaBarangList();
+        fetchSiteList();
         fetchSites();
+        fetchRoles();
     }, []);
 
     useEffect(() => {
@@ -165,15 +261,51 @@ const WebMonitoringApp = ({ user }) => {
             setTransaksiCurrentPage(1);
             fetchTransaksiData(1, transaksiPerPage);
         }
-    }, [selectedGudang, activeTab, itemsPerPage, transaksiPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
+        // Fetch users data ketika tab users dibuka
+        if (activeTab === 'users') {
+            setUsersCurrentPage(1);
+            fetchUsersData(1, usersPerPage);
+        }
+    }, [selectedGudang, filterItemId, filterPartNumber, filterNamaBarang, filterSite, activeTab, itemsPerPage, transaksiPerPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Effect terpisah untuk filter transaksi gudang
     useEffect(() => {
-        if (activeTab === 'transaksi' && selectedTransaksiGudang) {
+        if (activeTab === 'transaksi' && (selectedTransaksiGudang || selectedTransaksiGudangTujuan || filterTransaksiNoDok || filterTransaksiPartNumber || filterTransaksiNoReg)) {
             setTransaksiCurrentPage(1);
             fetchTransaksiData(1, transaksiPerPage);
         }
-    }, [selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedTransaksiGudang, selectedTransaksiGudangTujuan, filterTransaksiNoDok, filterTransaksiPartNumber, filterTransaksiNoReg, filterTransaksiNamaBarang, filterSite]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Effect terpisah untuk search users
+    useEffect(() => {
+        if (activeTab === 'users') {
+            setUsersCurrentPage(1);
+            fetchUsersData(1, usersPerPage, searchUsers);
+        }
+    }, [searchUsers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Effect untuk fetch data modal gudang saat dibuka
+    useEffect(() => {
+        if (showGudangModal) {
+            setGudangModalPage(1); // Reset to page 1
+            fetchGudangModalData(1);
+        }
+    }, [showGudangModal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Effect untuk fetch data modal site saat dibuka
+    useEffect(() => {
+        if (showSiteModal) {
+            setSiteModalPage(1); // Reset to page 1
+            fetchSiteModalData(1);
+        }
+    }, [showSiteModal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Effect untuk fetch site list saat modal add gudang dibuka
+    useEffect(() => {
+        if (showAddGudangModal) {
+            fetchSiteList();
+        }
+    }, [showAddGudangModal]);
 
     // Fetch status statistics and warehouse statistics when transaksi tab is active or filter changes
     useEffect(() => {
@@ -189,13 +321,70 @@ const WebMonitoringApp = ({ user }) => {
             if (dropdownOpen && !event.target.closest('.custom-dropdown')) {
                 setDropdownOpen(false);
             }
+            if (transaksiGudangDropdownOpen && !event.target.closest('.custom-dropdown-transaksi')) {
+                setTransaksiGudangDropdownOpen(false);
+            }
+            if (transaksiGudangTujuanDropdownOpen && !event.target.closest('.custom-dropdown-transaksi-tujuan')) {
+                setTransaksiGudangTujuanDropdownOpen(false);
+            }
+            if (namaBarangDropdownOpen && !event.target.closest('.custom-dropdown-namabarang')) {
+                setNamaBarangDropdownOpen(false);
+            }
+            if (transaksiNamaBarangDropdownOpen && !event.target.closest('.custom-dropdown-transaksi-namabarang')) {
+                setTransaksiNamaBarangDropdownOpen(false);
+            }
+            if (siteDropdownOpen && !event.target.closest('.custom-dropdown-site')) {
+                setSiteDropdownOpen(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [dropdownOpen]);
+    }, [dropdownOpen, transaksiGudangDropdownOpen, transaksiGudangTujuanDropdownOpen, namaBarangDropdownOpen, transaksiNamaBarangDropdownOpen, siteDropdownOpen]);
+
+    // Close modals when Esc key is pressed
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                if (showAddUserModal) {
+                    setShowAddUserModal(false);
+                    setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', siteid: '', id_status: '3' });
+                    setAddUserError('');
+                    setAddUserSuccess(false);
+                }
+                if (showEditUserModal) {
+                    setShowEditUserModal(false);
+                    setEditUserSearch('');
+                }
+                if (showDeleteUserModal) {
+                    setShowDeleteUserModal(false);
+                    setDeleteUserSearch('');
+                }
+                if (showDeleteConfirmModal) {
+                    setShowDeleteConfirmModal(false);
+                    setUserToDelete(null);
+                }
+                if (showEditOptionsModal) {
+                    setShowEditOptionsModal(false);
+                    setUserToEdit(null);
+                }
+                if (showEditFormModal) {
+                    setShowEditFormModal(false);
+                    setEditField('');
+                    setEditValue('');
+                    setEditError('');
+                    setEditSuccess(false);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [showAddUserModal, showEditUserModal, showDeleteUserModal, showDeleteConfirmModal, showEditOptionsModal, showEditFormModal]);
 
     const fetchDashboardData = async () => {
         try {
@@ -242,8 +431,39 @@ const WebMonitoringApp = ({ user }) => {
         
         setTransaksiLoading(true);
         try {
-            const filterParam = selectedTransaksiGudang !== 'all' ? `&filter=${encodeURIComponent(selectedTransaksiGudang)}` : '';
-            const response = await fetch(`/api/transaksi?page=${page}&per_page=${perPage}${filterParam}`);
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('per_page', perPage);
+            
+            if (selectedTransaksiGudang !== 'all') {
+                params.append('filter_from', selectedTransaksiGudang);
+            }
+            
+            if (selectedTransaksiGudangTujuan !== 'all') {
+                params.append('filter_to', selectedTransaksiGudangTujuan);
+            }
+            
+            if (filterTransaksiNoDok) {
+                params.append('filter_nodok', filterTransaksiNoDok);
+            }
+            
+            if (filterTransaksiPartNumber) {
+                params.append('filter_partnumber', filterTransaksiPartNumber);
+            }
+            
+            if (filterTransaksiNoReg) {
+                params.append('filter_noreg', filterTransaksiNoReg);
+            }
+            
+            if (filterTransaksiNamaBarang !== 'all') {
+                params.append('filter_namabarang', filterTransaksiNamaBarang);
+            }
+            
+            if (filterSite !== 'all') {
+                params.append('filter_site', filterSite);
+            }
+            
+            const response = await fetch(`/api/transaksi?${params.toString()}`);
             const data = await response.json();
             
             console.log('📄 Transaksi response:', data);
@@ -376,11 +596,11 @@ const WebMonitoringApp = ({ user }) => {
         setAddUserError('');
         setAddUserSuccess(false);
         
-        // Convert NRP, id_satuan, dan id_status to integer
+        // Convert NRP, siteid, dan id_status to integer
         const submitData = {
             ...addUserForm,
             NRP: parseInt(addUserForm.NRP),
-            id_satuan: parseInt(addUserForm.id_satuan),
+            siteid: parseInt(addUserForm.siteid),
             id_status: parseInt(addUserForm.id_status)
         };
         
@@ -404,7 +624,7 @@ const WebMonitoringApp = ({ user }) => {
             
             if (res.ok) {
                 setAddUserSuccess(true);
-                setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '', id_status: '3' });
+                setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', siteid: '', id_status: '3' });
                 setTimeout(() => {
                     setShowAddUserModal(false);
                     setAddUserSuccess(false);
@@ -448,9 +668,43 @@ const WebMonitoringApp = ({ user }) => {
 
     const closeAddUserModal = () => {
         setShowAddUserModal(false);
-        setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '', id_status: '3' });
+        setAddUserForm({ username: '', password: '', Nama: '', NRP: '', Email: '', siteid: '', id_status: '3' });
         setAddUserError('');
         setAddUserSuccess(false);
+    };
+
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+        
+        setDeleteLoading(true);
+        try {
+            const response = await fetch(`/api/delete-user/${userToDelete.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Close modal and refresh data
+                setShowDeleteConfirmModal(false);
+                setUserToDelete(null);
+                
+                // Refresh users data
+                fetchUsersData(usersCurrentPage, usersPerPage, searchUsers);
+            } else {
+                console.error('Error deleting user:', data.message);
+                alert('Gagal menghapus user: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Network error:', error);
+            alert('Network error: ' + error.message);
+        }
+        
+        setDeleteLoading(false);
     };
 
     const fetchGudangList = async () => {
@@ -491,15 +745,99 @@ const WebMonitoringApp = ({ user }) => {
         }
     };
 
+    const fetchRoles = async () => {
+        try {
+            const response = await fetch('/api/status?page=1&per_page=1000');
+            if (response.ok) {
+                const result = await response.json();
+                setRolesList(result.data || []);
+                console.log('Roles loaded for modal:', result.data?.length || 0);
+            } else {
+                console.error('Failed to fetch roles for modal');
+            }
+        } catch (error) {
+            console.error('Error fetching roles for modal:', error);
+        }
+    };
+
+    const fetchNamaBarangList = async () => {
+        try {
+            const response = await fetch('/api/nama-barang-list');
+            const data = await response.json();
+            if (data.data) {
+                setNamaBarangList(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching nama barang list:', error);
+        }
+    };
+
+    const fetchTransaksiNamaBarangList = async () => {
+        try {
+            const response = await fetch('/api/transaksi-nama-barang-list');
+            const data = await response.json();
+            if (data.data) {
+                setTransaksiNamaBarangList(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching transaksi nama barang list:', error);
+        }
+    };
+
+    const fetchUsersData = async (page = 1, perPage = 15, search = '') => {
+        if (usersLoading) return;
+        
+        setUsersLoading(true);
+        try {
+            const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+            const response = await fetch(`/api/users?page=${page}&per_page=${perPage}${searchParam}`);
+            const data = await response.json();
+            
+            console.log('👥 Users response:', data);
+            
+            if (data.data) {
+                setUsersData(data.data);
+                setUsersCurrentPage(data.current_page);
+                setUsersTotalPages(data.last_page);
+                setUsersTotal(data.total);
+            }
+        } catch (error) {
+            console.error('Error fetching users data:', error);
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
     const fetchGudangData = async (page = 1, perPage = itemsPerPage) => {
         try {
             setLoading(true);
             
-            // Gunakan pagination normal saja
-            const url = selectedGudang === 'all' 
-                ? `/api/gudang?page=${page}&per_page=${perPage}`
-                : `/api/gudang?filter=${selectedGudang}&page=${page}&per_page=${perPage}`;
+            // Build filter parameters
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('per_page', perPage);
             
+            if (selectedGudang !== 'all') {
+                params.append('filter', selectedGudang);
+            }
+            
+            if (filterItemId) {
+                params.append('filter_itemid', filterItemId);
+            }
+            
+            if (filterPartNumber) {
+                params.append('filter_partnumber', filterPartNumber);
+            }
+            
+            if (filterNamaBarang !== 'all') {
+                params.append('filter_namabarang', filterNamaBarang);
+            }
+            
+            if (filterSite !== 'all') {
+                params.append('filter_site', filterSite);
+            }
+            
+            const url = `/api/gudang?${params.toString()}`;
             const response = await fetch(url);
             const data = await response.json();
             
@@ -519,6 +857,139 @@ const WebMonitoringApp = ({ user }) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
             fetchGudangData(page, itemsPerPage);
+        }
+    };
+
+    // Fungsi untuk fetch data modal gudang
+    const fetchGudangModalData = async (page = 1) => {
+        setGudangModalLoading(true);
+        try {
+            console.log('🔄 Fetching gudang modal data for page:', page);
+            const response = await fetch(`/api/gudang-modal?page=${page}&per_page=${itemsPerModalPage}`);
+            const data = await response.json();
+            
+            console.log('📦 Gudang modal response:', data);
+            
+            if (data.success && data.data) {
+                setGudangModalData(data.data);
+                setGudangModalPage(data.pagination.current_page);
+                setGudangModalTotal(data.pagination.total);
+                console.log('✅ Gudang modal data loaded:', data.data.length, 'items');
+            } else {
+                console.error('❌ Failed to load gudang modal data:', data);
+                setGudangModalData([]);
+                setGudangModalTotal(0);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching gudang modal data:', error);
+            setGudangModalData([]);
+            setGudangModalTotal(0);
+        } finally {
+            setGudangModalLoading(false);
+        }
+    };
+
+    // Fungsi untuk fetch data modal site
+    const fetchSiteModalData = async (page = 1) => {
+        setSiteModalLoading(true);
+        try {
+            const response = await fetch(`/api/site-modal?page=${page}&per_page=${itemsPerModalPage}`);
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                setSiteModalData(data.data);
+                setSiteModalPage(data.pagination.current_page);
+                setSiteModalTotal(data.pagination.total);
+            }
+        } catch (error) {
+            console.error('Error fetching site modal data:', error);
+        } finally {
+            setSiteModalLoading(false);
+        }
+    };
+
+    // Fungsi untuk fetch list site (untuk dropdown)
+    const fetchSiteList = async () => {
+        try {
+            const response = await fetch('/api/site-list');
+            const result = await response.json();
+            
+            console.log('🏢 Site list API response:', result);
+            
+            if (result.success) {
+                console.log('🏢 Setting siteList with:', result.data);
+                setSiteList(result.data);
+            } else {
+                console.error('🏢 Site list API returned success: false');
+            }
+        } catch (error) {
+            console.error('Error fetching site list:', error);
+        }
+    };
+
+    // Fungsi untuk menambah gudang
+    const handleAddGudang = async (e) => {
+        e.preventDefault();
+        setAddGudangLoading(true);
+        try {
+            const response = await fetch('/api/gudang/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(addGudangForm)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                setSuccessMessage('Gudang berhasil ditambahkan! 🎉');
+                setShowSuccessModal(true);
+                setShowAddGudangModal(false);
+                setAddGudangForm({ location: '', idsite: '' });
+                fetchGudangModalData(1); // Refresh data from page 1
+                fetchDashboardData(); // Update counter
+            } else {
+                alert(result.message || 'Gagal menambahkan gudang');
+            }
+        } catch (error) {
+            console.error('Error adding gudang:', error);
+            alert('Terjadi kesalahan saat menambahkan gudang');
+        } finally {
+            setAddGudangLoading(false);
+        }
+    };
+
+    // Fungsi untuk menambah site
+    const handleAddSite = async (e) => {
+        e.preventDefault();
+        setAddSiteLoading(true);
+        try {
+            const response = await fetch('/api/site/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(addSiteForm)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                setSuccessMessage('Site berhasil ditambahkan! 🎉');
+                setShowSuccessModal(true);
+                setShowAddSiteModal(false);
+                setAddSiteForm({ siteid: '' });
+                fetchSiteModalData(1); // Refresh data from page 1
+                fetchDashboardData(); // Update counter
+            } else {
+                alert(result.message || 'Gagal menambahkan site');
+            }
+        } catch (error) {
+            console.error('Error adding site:', error);
+            alert('Terjadi kesalahan saat menambahkan site');
+        } finally {
+            setAddSiteLoading(false);
         }
     };
 
@@ -989,7 +1460,13 @@ const WebMonitoringApp = ({ user }) => {
                             {/* Kolom Kiri: Gudang dan Site (atas-bawah) */}
                             <div className="flex flex-col gap-4">
                                 {/* Box Gudang */}
-                                <div className={`${getCardClasses('p-6 w-72')}`}>
+                                <div 
+                                    className={`${getCardClasses('p-6 w-72 cursor-pointer hover:shadow-lg transition-shadow duration-200')}`}
+                                    onClick={() => {
+                                        setShowGudangModal(true);
+                                        fetchGudangModalData(1);
+                                    }}
+                                >
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className={`${getTextClasses('secondary')} text-sm`}>Gudang</p>
@@ -1002,7 +1479,13 @@ const WebMonitoringApp = ({ user }) => {
                                 </div>
                                 
                                 {/* Box Site */}
-                                <div className={`${getCardClasses('p-6 w-72')}`}>
+                                <div 
+                                    className={`${getCardClasses('p-6 w-72 cursor-pointer hover:shadow-lg transition-shadow duration-200')}`}
+                                    onClick={() => {
+                                        setShowSiteModal(true);
+                                        fetchSiteModalData(1);
+                                    }}
+                                >
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className={`${getTextClasses('secondary')} text-sm`}>Site</p>
@@ -1042,86 +1525,14 @@ const WebMonitoringApp = ({ user }) => {
 
                         {/* Charts Row - Transaction Status Chart & Daily Login Chart */}
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* Transaction Status Chart with Details */}
+                            {/* Transaction Status Chart */}
                             <div className="flex-1">
                                 <div className={`${getCardClasses('p-6')}`}>
-                                    <h3 className={`text-lg font-semibold ${getTextClasses('primary')} mb-4 text-center`}>
-                                        📈 Status Transaksi
-                                    </h3>
-                                    <div className="flex flex-col lg:flex-row gap-6">
-                                        {/* Chart Section */}
-                                        <div className="flex-1">
-                                            <div className="h-80 w-full flex justify-center items-center">
-                                                <div className="h-full w-full max-w-sm">
-                                                    <PieChart 
-                                                        data={transactionStatusData} 
-                                                        title=""
-                                                        compact={false}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Details Section */}
-                                        <div className="lg:w-80 flex flex-col justify-center">
-                                            <div className={`${getCardClasses('p-4 border-l-4 border-blue-500')}`}>
-                                                <h4 className={`text-md font-semibold ${getTextClasses('primary')} mb-3`}>
-                                                    � Detail Status Transaksi
-                                                </h4>
-                                                <div className="space-y-3">
-                                                    {transactionStatusData.map((item, index) => {
-                                                        const total = transactionStatusData.reduce((sum, d) => sum + d.value, 0);
-                                                        const percentage = ((item.value / total) * 100).toFixed(1);
-                                                        
-                                                        // Color mapping untuk konsistensi dengan chart
-                                                        const getStatusColor = (name) => {
-                                                            if (name && name.toLowerCase().includes('kasubdis')) return '#000000';
-                                                            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FF8000'];
-                                                            return colors[index % colors.length];
-                                                        };
-                                                        
-                                                        return (
-                                                            <div key={index} className={`flex items-center justify-between p-2 rounded-md ${
-                                                                isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'
-                                                            } transition-colors duration-200`}>
-                                                                <div className="flex items-center">
-                                                                    <div 
-                                                                        className="w-4 h-4 rounded-full mr-3 border-2 border-white shadow-sm" 
-                                                                        style={{ backgroundColor: getStatusColor(item.name) }}
-                                                                    ></div>
-                                                                    <span className={`text-sm font-medium ${getTextClasses('primary')}`}>
-                                                                        {item.name}
-                                                                    </span>
-                                                                </div>
-                                                                <div className={`text-right ${getTextClasses('secondary')}`}>
-                                                                    <div className={`text-lg font-bold ${getTextClasses('primary')}`}>
-                                                                        {item.value.toLocaleString()}
-                                                                    </div>
-                                                                    <div className="text-xs">
-                                                                        {percentage}%
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                
-                                                {/* Summary */}
-                                                <div className={`mt-4 pt-3 border-t ${
-                                                    isDarkMode ? 'border-gray-600' : 'border-gray-200'
-                                                }`}>
-                                                    <div className="flex justify-between items-center">
-                                                        <span className={`text-sm font-medium ${getTextClasses('primary')}`}>
-                                                            Total Transaksi:
-                                                        </span>
-                                                        <span className={`text-lg font-bold ${getTextClasses('primary')}`}>
-                                                            {transactionStatusData.reduce((sum, item) => sum + item.value, 0).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <BarChart 
+                                        data={transactionStatusData} 
+                                        title="� Status Transaksi"
+                                        compact={false}
+                                    />
                                 </div>
                             </div>
 
@@ -1195,198 +1606,360 @@ const WebMonitoringApp = ({ user }) => {
                 );
             case 'gudang':
                 return (
-                    <div>
-                        {/* Header dengan Dropdown */}
-                        <div className={`${getCardClasses('p-6 mb-6')}`}>
+                    <div className={`${getCardClasses('p-6')}`}>
+                        {/* Header dengan Title dan Total */}
+                        <div className="mb-6">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2`}>Data Gudang</h2>
-                                    <p className={`${getTextClasses('secondary')}`}>Kelola dan pantau data gudang inventaris</p>
-                                </div>
-                                
-                                {/* Dropdown Pilihan Gudang */}
-                                <div className="mt-4 md:mt-0">
-                                    <label htmlFor="gudang-select" className={`block text-sm font-medium ${getTextClasses('secondary')} mb-2`}>
-                                        Filter Gudang:
-                                    </label>
-                                    <div className="custom-dropdown">
-                                        <button
-                                            type="button"
-                                            onClick={() => setDropdownOpen(!dropdownOpen)}
-                                            className={`relative block w-64 px-3 py-2 text-left rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                                                isDarkMode 
-                                                    ? 'bg-gray-700 border border-gray-600 text-white' 
-                                                    : 'bg-white border border-gray-300'
-                                            }`}
-                                        >
-                                            <span className="block truncate">
-                                                {selectedGudang === 'all' ? '🏢 Semua Gudang' : `📦 ${selectedGudang}`}
-                                            </span>
-                                            <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </span>
-                                        </button>
-                                        
-                                        {dropdownOpen && (
-                                            <div className={`custom-dropdown-content ${
-                                                isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
-                                            }`}>
-                                                {/* Search Input */}
-                                                <div className={`p-2 border-b ${
-                                                    isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                                                }`}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="🔍 Cari gudang..."
-                                                        value={searchGudang}
-                                                        onChange={(e) => setSearchGudang(e.target.value)}
-                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                                                            isDarkMode 
-                                                                ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
-                                                                : 'bg-white border border-gray-300 text-gray-900'
-                                                        }`}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    />
-                                                </div>
-                                                
-                                                {/* Gudang Options */}
-                                                <div className="max-h-60 overflow-y-auto">
-                                                    <div 
-                                                        className={`custom-dropdown-item ${
-                                                            selectedGudang === 'all' 
-                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
-                                                                : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
-                                                        }`}
-                                                        onClick={() => {
-                                                            setSelectedGudang('all');
-                                                            setDropdownOpen(false);
-                                                            setSearchGudang('');
-                                                        }}
-                                                    >
-                                                        🏢 Semua Gudang
-                                                    </div>
-                                                    {gudangList
-                                                        .filter(gudang => 
-                                                            gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
-                                                        )
-                                                        .map((gudang, index) => (
-                                                            <div 
-                                                                key={index}
-                                                                className={`custom-dropdown-item ${
-                                                                    selectedGudang === gudang.Gudang 
-                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
-                                                                        : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
-                                                                }`}
-                                                                onClick={() => {
-                                                                    setSelectedGudang(gudang.Gudang);
-                                                                    setDropdownOpen(false);
-                                                                    setSearchGudang('');
-                                                                }}
-                                                            >
-                                                                📦 {gudang.Gudang}
-                                                            </div>
-                                                        ))
-                                                    }
-                                                    
-                                                    {/* No results message */}
-                                                    {searchGudang && gudangList.filter(gudang => 
-                                                        gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
-                                                    ).length === 0 && (
-                                                        <div className="custom-dropdown-item text-gray-500 text-center">
-                                                            Tidak ada gudang yang ditemukan
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Info Summary */}
-                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 mb-6 border border-blue-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-blue-800 font-semibold">
+                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2 flex items-center`}>
+                                        <span className="text-2xl mr-2">📦</span>
+                                        Data Gudang
+                                    </h2>
+                                    <p className={`${getTextClasses('secondary')}`}>
                                         {selectedGudang === 'all' 
                                             ? `Total Semua Gudang: ${totalItems.toLocaleString()} item` 
-                                            : `Data untuk: ${selectedGudang}`
+                                            : `Data untuk: ${selectedGudang} | Total: ${totalItems.toLocaleString()} item`
                                         }
                                     </p>
-                                    <p className="text-blue-600 text-sm">
+                                    <p className={`text-sm ${getTextClasses('secondary')} mt-1`}>
                                         {totalItems > 0 
-                                            ? `Halaman ${currentPage} dari ${totalPages} | Menampilkan ${gudangData.length} dari ${totalItems.toLocaleString()} item` 
+                                            ? `Halaman ${currentPage} dari ${totalPages} | Menampilkan ${gudangData.length} item` 
                                             : 'Belum ada data'
                                         }
                                     </p>
                                 </div>
-                                <div className="text-blue-600">
-                                    <span className="text-2xl">🏢</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Pagination Controls */}
-                        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <label htmlFor="items-per-page" className={`text-sm font-medium ${getTextClasses('secondary')}`}>
-                                            Items per page:
-                                        </label>
-                                        <select
-                                            id="items-per-page"
-                                            value={itemsPerPage}
-                                            onChange={(e) => {
-                                                setItemsPerPage(parseInt(e.target.value));
-                                                setCurrentPage(1);
-                                            }}
-                                            className={`px-3 py-1 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                isDarkMode 
-                                                    ? 'bg-gray-700 border border-gray-600 text-white' 
-                                                    : 'bg-white border border-gray-300 text-gray-900'
-                                            }`}
-                                        >
-                                            <option value={10}>10</option>
-                                            <option value={25}>25</option>
-                                            <option value={50}>50</option>
-                                            <option value={100}>100</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div className={`text-sm ${getTextClasses('secondary')}`}>
-                                    Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems.toLocaleString()} items
+                                {/* Items Per Page Selector */}
+                                <div className="flex items-center gap-2 mt-4 md:mt-0">
+                                    <label htmlFor="items-per-page" className={`text-sm font-medium ${getTextClasses('secondary')}`}>
+                                        Items per page:
+                                    </label>
+                                    <select
+                                        id="items-per-page"
+                                        value={itemsPerPage}
+                                        onChange={(e) => {
+                                            setItemsPerPage(parseInt(e.target.value));
+                                            setCurrentPage(1);
+                                        }}
+                                        className={`px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                            isDarkMode 
+                                                ? 'bg-gray-700 border border-gray-600 text-white' 
+                                                : 'bg-white border border-gray-300 text-gray-900'
+                                        }`}
+                                    >
+                                        <option value={10}>10</option>
+                                        <option value={25}>25</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
 
                         {/* Tabel Data Barang di Gudang */}
-                        <div className={`${getCardClasses('p-6')}`}>
-                            <h3 className={`text-lg font-bold ${getTextClasses('primary')} mb-4`}>Data Barang di Gudang</h3>
-                            
-                            {gudangData.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                    <div className={`max-h-96 overflow-y-auto rounded-lg ${
-                                        isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
-                                    }`}>
-                                        <table className="min-w-full table-auto">
-                                            <thead className={`sticky top-0 ${
-                                                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-                                            }`}>
+                        <div className={`mb-6 ${namaBarangDropdownOpen || dropdownOpen || siteDropdownOpen ? 'overflow-visible' : ''}`}>
+                            <div className={`overflow-x-auto ${namaBarangDropdownOpen || dropdownOpen || siteDropdownOpen ? 'overflow-visible' : 'relative'}`}>
+                                <div className={`rounded-lg ${
+                                    isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
+                                } ${gudangData.length > 0 && !namaBarangDropdownOpen && !dropdownOpen && !siteDropdownOpen ? 'max-h-96 overflow-y-auto' : 'overflow-visible'}`}>
+                                    <table className="min-w-full table-auto">
+                                        <thead className={`sticky top-0 ${
+                                            isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                        } z-10`}>
                                                 <tr>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Item ID</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Part Number</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Nama Barang</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Gudang</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>
+                                                        <div className="mb-1">Item ID</div>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Filter..."
+                                                            value={filterItemId}
+                                                            onChange={(e) => setFilterItemId(e.target.value)}
+                                                            className={`w-full px-2 py-1 text-xs rounded border ${
+                                                                isDarkMode 
+                                                                    ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                                                    : 'bg-white border-gray-300 text-gray-900'
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>
+                                                        <div className="mb-1">Part Number</div>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Filter..."
+                                                            value={filterPartNumber}
+                                                            onChange={(e) => setFilterPartNumber(e.target.value)}
+                                                            className={`w-full px-2 py-1 text-xs rounded border ${
+                                                                isDarkMode 
+                                                                    ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                                                    : 'bg-white border-gray-300 text-gray-900'
+                                                            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')} relative custom-dropdown-namabarang`}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setNamaBarangDropdownOpen(!namaBarangDropdownOpen);
+                                                            }}
+                                                            className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                        >
+                                                            Nama Barang
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+                                                        
+                                                        {namaBarangDropdownOpen && (
+                                                            <div 
+                                                                className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                    isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                                }`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                {/* Search Input */}
+                                                                <div className={`p-2 border-b ${
+                                                                    isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                                }`}>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="🔍 Cari nama barang..."
+                                                                        value={searchNamaBarang}
+                                                                        onChange={(e) => setSearchNamaBarang(e.target.value)}
+                                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                            isDarkMode 
+                                                                                ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                                : 'bg-white border border-gray-300 text-gray-900'
+                                                                        }`}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                                
+                                                                {/* Nama Barang Options */}
+                                                                <div className="max-h-60 overflow-y-auto">
+                                                                    <div 
+                                                                        className={`px-3 py-2 cursor-pointer ${
+                                                                            filterNamaBarang === 'all' 
+                                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                        }`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setFilterNamaBarang('all');
+                                                                            setNamaBarangDropdownOpen(false);
+                                                                            setSearchNamaBarang('');
+                                                                        }}
+                                                                    >
+                                                                        📦 Semua Barang
+                                                                    </div>
+                                                                    {namaBarangList
+                                                                        .filter(item => 
+                                                                            item.nama_barang.toLowerCase().includes(searchNamaBarang.toLowerCase())
+                                                                        )
+                                                                        .map((item, index) => (
+                                                                            <div 
+                                                                                key={index}
+                                                                                className={`px-3 py-2 cursor-pointer ${
+                                                                                    filterNamaBarang === item.nama_barang 
+                                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                        : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                                }`}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setFilterNamaBarang(item.nama_barang);
+                                                                                    setNamaBarangDropdownOpen(false);
+                                                                                    setSearchNamaBarang('');
+                                                                                }}
+                                                                            >
+                                                                                🔧 {item.nama_barang}
+                                                                            </div>
+                                                                        ))
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')} relative custom-dropdown`}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDropdownOpen(!dropdownOpen);
+                                                            }}
+                                                            className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                        >
+                                                            Gudang
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+                                                        
+                                                        {dropdownOpen && (
+                                                            <div 
+                                                                className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                    isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                                }`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                {/* Search Input */}
+                                                                <div className={`p-2 border-b ${
+                                                                    isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                                }`}>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="🔍 Cari gudang..."
+                                                                        value={searchGudang}
+                                                                        onChange={(e) => setSearchGudang(e.target.value)}
+                                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                            isDarkMode 
+                                                                                ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                                : 'bg-white border border-gray-300 text-gray-900'
+                                                                        }`}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                                
+                                                                {/* Gudang Options */}
+                                                                <div className="max-h-60 overflow-y-auto">
+                                                                    <div 
+                                                                        className={`px-3 py-2 cursor-pointer ${
+                                                                            selectedGudang === 'all' 
+                                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                        }`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setSelectedGudang('all');
+                                                                            setDropdownOpen(false);
+                                                                            setSearchGudang('');
+                                                                        }}
+                                                                    >
+                                                                        🏢 Semua Gudang
+                                                                    </div>
+                                                                    {gudangList
+                                                                        .filter(gudang => 
+                                                                            gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
+                                                                        )
+                                                                        .map((gudang, index) => (
+                                                                            <div 
+                                                                                key={index}
+                                                                                className={`px-3 py-2 cursor-pointer ${
+                                                                                    selectedGudang === gudang.Gudang 
+                                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                        : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                                }`}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedGudang(gudang.Gudang);
+                                                                                    setDropdownOpen(false);
+                                                                                    setSearchGudang('');
+                                                                                }}
+                                                                            >
+                                                                                📦 {gudang.Gudang}
+                                                                            </div>
+                                                                        ))
+                                                                    }
+                                                                    
+                                                                    {/* No results message */}
+                                                                    {searchGudang && gudangList.filter(gudang => 
+                                                                        gudang.Gudang.toLowerCase().includes(searchGudang.toLowerCase())
+                                                                    ).length === 0 && (
+                                                                        <div className="px-3 py-2 text-gray-500 text-center">
+                                                                            Tidak ada gudang yang ditemukan
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')} relative custom-dropdown-site`}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSiteDropdownOpen(!siteDropdownOpen);
+                                                            }}
+                                                            className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                        >
+                                                            Site
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+                                                        
+                                                        {siteDropdownOpen && (
+                                                            <div 
+                                                                className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                    isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                                }`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                {/* Search Input */}
+                                                                <div className={`p-2 border-b ${
+                                                                    isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                                }`}>
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="🔍 Cari site..."
+                                                                        value={searchSite}
+                                                                        onChange={(e) => setSearchSite(e.target.value)}
+                                                                        className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                            isDarkMode 
+                                                                                ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                                : 'bg-white border border-gray-300 text-gray-900'
+                                                                        }`}
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                    />
+                                                                </div>
+                                                                
+                                                                {/* Site Options */}
+                                                                <div className="max-h-60 overflow-y-auto">
+                                                                    <div 
+                                                                        className={`px-3 py-2 cursor-pointer ${
+                                                                            filterSite === 'all' 
+                                                                                ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                        }`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setFilterSite('all');
+                                                                            setSiteDropdownOpen(false);
+                                                                            setSearchSite('');
+                                                                        }}
+                                                                    >
+                                                                        📍 Semua Site
+                                                                    </div>
+                                                                    {siteList
+                                                                        .filter(site => 
+                                                                            site.siteid.toLowerCase().includes(searchSite.toLowerCase())
+                                                                        )
+                                                                        .map((site, index) => (
+                                                                            <div 
+                                                                                key={index}
+                                                                                className={`px-3 py-2 cursor-pointer ${
+                                                                                    filterSite === site.siteid 
+                                                                                        ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                        : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                                }`}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setFilterSite(site.siteid);
+                                                                                    setSiteDropdownOpen(false);
+                                                                                    setSearchSite('');
+                                                                                }}
+                                                                            >
+                                                                                📍 {site.siteid}
+                                                                            </div>
+                                                                        ))
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </th>
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Rak</th>
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Jumlah</th>
                                                     <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Satuan</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Harga</th>
-                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody className={`divide-y ${
@@ -1394,33 +1967,47 @@ const WebMonitoringApp = ({ user }) => {
                                                     ? 'bg-gray-800 divide-gray-600' 
                                                     : 'bg-white divide-gray-200'
                                             }`}>
-                                                {gudangData.map((item, index) => (
-                                                    <tr key={index} className={`${
-                                                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                                                    }`}>
-                                                        <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.item_id}</td>
-                                                        <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{item.part_number}</td>
-                                                        <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`} title={item.nama_barang}>
-                                                            <div className="max-w-48 truncate">{item.nama_barang}</div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                                🏢 {item.gudang}
-                                                            </span>
-                                                        </td>
-                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.rak || '-'}</td>
-                                                        <td className={`px-4 py-3 text-sm font-semibold text-right ${getTextClasses('primary')}`}>
-                                                            {item.jumlah || '0'}
-                                                        </td>
-                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.satuan || '-'}</td>
-                                                        <td className={`px-4 py-3 text-sm text-right ${getTextClasses('primary')}`}>-</td>
-                                                        <td className="px-4 py-3 text-sm">
-                                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                                ✅ ACTIVE
-                                                            </span>
+                                                {gudangData.length > 0 ? (
+                                                    gudangData.map((item, index) => (
+                                                        <tr key={index} className={`${
+                                                            isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                                        }`}>
+                                                            <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('primary')}`}>{item.item_id}</td>
+                                                            <td className="px-4 py-3 text-sm text-blue-600 font-semibold">{item.part_number}</td>
+                                                            <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`} title={item.nama_barang}>
+                                                                <div className="max-w-48 truncate">{item.nama_barang}</div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm">
+                                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                    🏢 {item.gudang}
+                                                                </span>
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
+                                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                                    📍 {item.site || '-'}
+                                                                </span>
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.rak || '-'}</td>
+                                                            <td className={`px-4 py-3 text-sm font-semibold text-right ${getTextClasses('primary')}`}>
+                                                                {item.jumlah || '0'}
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>{item.satuan || '-'}</td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="8" className="px-4 py-12 text-center">
+                                                            <span className={`text-4xl mb-4 block ${getTextClasses('secondary')}`}>📭</span>
+                                                            <p className={`text-lg font-medium ${getTextClasses('primary')}`}>Belum ada data barang</p>
+                                                            <p className={`text-sm ${getTextClasses('secondary')}`}>
+                                                                {selectedGudang === 'all' 
+                                                                    ? 'Tidak ada data barang tersedia'
+                                                                    : `Tidak ada data barang untuk gudang: ${selectedGudang}`
+                                                                }
+                                                            </p>
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1440,11 +2027,11 @@ const WebMonitoringApp = ({ user }) => {
                                     
                                     {/* Pagination Controls */}
                                     {totalPages > 1 && (
-                                        <div className="mt-4 flex justify-between items-center">
-                                            <div className="text-sm text-gray-500">
-                                                Menampilkan halaman {currentPage} dari {totalPages} | Total: {totalItems.toLocaleString()} item
+                                        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                            <div className={`text-sm ${getTextClasses('secondary')}`}>
+                                                Halaman {currentPage} dari {totalPages} | Total: {totalItems.toLocaleString()} item
                                             </div>
-                                            <div className="flex space-x-2">
+                                            <div className="flex gap-2">
                                                 <button
                                                     onClick={handlePrevPage}
                                                     disabled={currentPage === 1 || loading}
@@ -1458,7 +2045,7 @@ const WebMonitoringApp = ({ user }) => {
                                                 </button>
                                                 
                                                 {/* Page Numbers */}
-                                                <div className="flex space-x-1">
+                                                <div className="flex gap-1">
                                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                         let pageNum;
                                                         if (totalPages <= 5) {
@@ -1503,25 +2090,15 @@ const WebMonitoringApp = ({ user }) => {
                                         </div>
                                     )}
                                     
-                                    <div className="mt-3 text-center text-sm text-gray-500">
-                                        📊 Total Stok Halaman Ini: {gudangData.reduce((sum, item) => sum + (parseInt(item.jumlah) || 0), 0).toLocaleString()} unit
-                                    </div>
+                                    {gudangData.length > 0 && (
+                                        <div className={`mt-3 text-center text-sm ${getTextClasses('secondary')}`}>
+                                            📊 Total Stok Halaman Ini: {gudangData.reduce((sum, item) => sum + (parseInt(item.jumlah) || 0), 0).toLocaleString()} unit
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="text-center py-12 text-gray-500">
-                                    <span className="text-4xl mb-4 block">📭</span>
-                                    <p className="text-lg font-medium">Belum ada data barang</p>
-                                    <p className="text-sm">
-                                        {selectedGudang === 'all' 
-                                            ? 'Tidak ada data barang tersedia'
-                                            : `Tidak ada data barang untuk gudang: ${selectedGudang}`
-                                        }
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
 
-                        {/* Stock Chart - Grafik Pie Chart Stock */}
+                        {/* Distribusi Stock Chart */}
                         <div className="mt-8">
                             <SafeStockPieChart 
                                 selectedGudang={selectedGudang} 
@@ -1531,11 +2108,12 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
                     </div>
                 );
+
             case 'transaksi':
                 return (
                     <div className="space-y-6">
                         {/* Container untuk Table Transaksi */}
-                        <div className={`${getCardClasses('p-6')} max-h-[600px]`}>
+                        <div className={`${getCardClasses('p-6')} ${transaksiNamaBarangDropdownOpen || siteDropdownOpen || transaksiGudangDropdownOpen || transaksiGudangTujuanDropdownOpen ? 'overflow-visible' : 'max-h-[600px] overflow-y-auto'}`}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className={`text-2xl font-bold ${getTextClasses('primary')} flex items-center`}>
                                 <span className="text-2xl mr-2">💳</span>
@@ -1543,42 +2121,6 @@ const WebMonitoringApp = ({ user }) => {
                             </h2>
                             <div className={`text-sm ${getTextClasses('secondary')}`}>
                                 Total: {transaksiTotal.toLocaleString()} transaksi
-                            </div>
-                        </div>
-
-                        {/* Filter Gudang */}
-                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex items-center space-x-4">
-                                <label className={`text-sm font-medium ${getTextClasses('secondary')}`}>Filter Gudang:</label>
-                                <select
-                                    value={selectedTransaksiGudang}
-                                    onChange={(e) => {
-                                        const newFilter = e.target.value;
-                                        console.log('🔄 Changing filter to:', newFilter);
-                                        setSelectedTransaksiGudang(newFilter);
-                                        setTransaksiCurrentPage(1);
-                                        // Note: fetchTransaksiData will be called by useEffect
-                                    }}
-                                    className={`px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                                        isDarkMode 
-                                            ? 'bg-gray-700 border border-gray-600 text-white' 
-                                            : 'bg-white border border-gray-300 text-gray-900'
-                                    }`}
-                                >
-                                    <option value="all">Semua Gudang ({transaksiGudangList.length})</option>
-                                    {transaksiGudangList.map((gudang, index) => (
-                                        <option key={index} value={gudang.gudang}>
-                                            {gudang.gudang}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                {selectedTransaksiGudang !== 'all' && (
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                        Filter: {selectedTransaksiGudang}
-                                    </span>
-                                )}
                             </div>
                         </div>
 
@@ -1590,23 +2132,415 @@ const WebMonitoringApp = ({ user }) => {
                                 </div>
                             </div>
                         ) : (
-                            <div>
-                                <div className="overflow-auto max-h-64 border rounded">
+                            <div className={transaksiNamaBarangDropdownOpen || siteDropdownOpen || transaksiGudangDropdownOpen || transaksiGudangTujuanDropdownOpen ? 'overflow-visible' : ''}>
+                                <div className={`border rounded ${transaksiNamaBarangDropdownOpen || siteDropdownOpen || transaksiGudangDropdownOpen || transaksiGudangTujuanDropdownOpen ? 'overflow-visible' : 'overflow-auto max-h-64'}`}>
                                     <table className="w-full table-fixed text-sm">
                                         <thead className={`${
                                             isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
                                         }`}>
                                             <tr>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>No. Dok</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>Part No</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-32`}>Nama Barang</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Dari</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Ke</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>Reg</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Req</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Rcv</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Ship</th>
-                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Site</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>
+                                                    <div className="mb-1">No. Dok</div>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Filter..."
+                                                        value={filterTransaksiNoDok}
+                                                        onChange={(e) => setFilterTransaksiNoDok(e.target.value)}
+                                                        className={`w-full px-2 py-1 text-xs rounded border ${
+                                                            isDarkMode 
+                                                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                                                : 'bg-white border-gray-300 text-gray-900'
+                                                        } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>
+                                                    <div className="mb-1">Part No</div>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Filter..."
+                                                        value={filterTransaksiPartNumber}
+                                                        onChange={(e) => setFilterTransaksiPartNumber(e.target.value)}
+                                                        className={`w-full px-2 py-1 text-xs rounded border ${
+                                                            isDarkMode 
+                                                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                                                : 'bg-white border-gray-300 text-gray-900'
+                                                        } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-32 relative custom-dropdown-transaksi-namabarang`}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTransaksiNamaBarangDropdownOpen(!transaksiNamaBarangDropdownOpen);
+                                                        }}
+                                                        className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                    >
+                                                        Nama Barang
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    {transaksiNamaBarangDropdownOpen && (
+                                                        <div 
+                                                            className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                            }`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* Search Input */}
+                                                            <div className={`p-2 border-b ${
+                                                                isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                            }`}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="🔍 Cari nama barang..."
+                                                                    value={searchTransaksiNamaBarang}
+                                                                    onChange={(e) => setSearchTransaksiNamaBarang(e.target.value)}
+                                                                    className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        isDarkMode 
+                                                                            ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                            : 'bg-white border border-gray-300 text-gray-900'
+                                                                    }`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                            </div>
+                                                            
+                                                            {/* Nama Barang Options */}
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                <div 
+                                                                    className={`px-3 py-2 cursor-pointer ${
+                                                                        filterTransaksiNamaBarang === 'all' 
+                                                                            ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                            : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                    }`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setFilterTransaksiNamaBarang('all');
+                                                                        setTransaksiNamaBarangDropdownOpen(false);
+                                                                        setSearchTransaksiNamaBarang('');
+                                                                    }}
+                                                                >
+                                                                    📦 Semua Barang
+                                                                </div>
+                                                                {transaksiNamaBarangList
+                                                                    .filter(item => 
+                                                                        item.nama_barang.toLowerCase().includes(searchTransaksiNamaBarang.toLowerCase())
+                                                                    )
+                                                                    .map((item, index) => (
+                                                                        <div 
+                                                                            key={index}
+                                                                            className={`px-3 py-2 cursor-pointer ${
+                                                                                filterTransaksiNamaBarang === item.nama_barang 
+                                                                                    ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                    : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                            }`}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setFilterTransaksiNamaBarang(item.nama_barang);
+                                                                                setTransaksiNamaBarangDropdownOpen(false);
+                                                                                setSearchTransaksiNamaBarang('');
+                                                                            }}
+                                                                        >
+                                                                            🔧 {item.nama_barang}
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20 relative custom-dropdown-transaksi`}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTransaksiGudangDropdownOpen(!transaksiGudangDropdownOpen);
+                                                        }}
+                                                        className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                    >
+                                                        Dari Gudang
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    {transaksiGudangDropdownOpen && (
+                                                        <div 
+                                                            className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                            }`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* Search Input */}
+                                                            <div className={`p-2 border-b ${
+                                                                isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                            }`}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="🔍 Cari gudang..."
+                                                                    value={searchTransaksiGudang}
+                                                                    onChange={(e) => setSearchTransaksiGudang(e.target.value)}
+                                                                    className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        isDarkMode 
+                                                                            ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                            : 'bg-white border border-gray-300 text-gray-900'
+                                                                    }`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                            </div>
+                                                            
+                                                            {/* Gudang Options */}
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                <div 
+                                                                    className={`px-3 py-2 cursor-pointer ${
+                                                                        selectedTransaksiGudang === 'all' 
+                                                                            ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                            : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                    }`}
+                                                                    onClick={() => {
+                                                                        setSelectedTransaksiGudang('all');
+                                                                        setTransaksiGudangDropdownOpen(false);
+                                                                        setSearchTransaksiGudang('');
+                                                                        setTransaksiCurrentPage(1);
+                                                                    }}
+                                                                >
+                                                                    🏢 Semua Gudang
+                                                                </div>
+                                                                {transaksiGudangList
+                                                                    .filter(gudang => 
+                                                                        gudang.gudang.toLowerCase().includes(searchTransaksiGudang.toLowerCase())
+                                                                    )
+                                                                    .map((gudang, index) => (
+                                                                        <div 
+                                                                            key={index}
+                                                                            className={`px-3 py-2 cursor-pointer ${
+                                                                                selectedTransaksiGudang === gudang.gudang 
+                                                                                    ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                    : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                            }`}
+                                                                            onClick={() => {
+                                                                                setSelectedTransaksiGudang(gudang.gudang);
+                                                                                setTransaksiGudangDropdownOpen(false);
+                                                                                setSearchTransaksiGudang('');
+                                                                                setTransaksiCurrentPage(1);
+                                                                            }}
+                                                                        >
+                                                                            📦 {gudang.gudang}
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                                
+                                                                {/* No results message */}
+                                                                {searchTransaksiGudang && transaksiGudangList.filter(gudang => 
+                                                                    gudang.gudang.toLowerCase().includes(searchTransaksiGudang.toLowerCase())
+                                                                ).length === 0 && (
+                                                                    <div className="px-3 py-2 text-gray-500 text-center">
+                                                                        Tidak ada gudang yang ditemukan
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20 relative custom-dropdown-transaksi-tujuan`}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTransaksiGudangTujuanDropdownOpen(!transaksiGudangTujuanDropdownOpen);
+                                                        }}
+                                                        className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                    >
+                                                        Tujuan
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    {transaksiGudangTujuanDropdownOpen && (
+                                                        <div className={`absolute top-full left-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                            isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                        }`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* Search Input */}
+                                                            <div className={`p-2 border-b ${
+                                                                isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                            }`}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="🔍 Cari gudang tujuan..."
+                                                                    value={searchTransaksiGudangTujuan}
+                                                                    onChange={(e) => setSearchTransaksiGudangTujuan(e.target.value)}
+                                                                    className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        isDarkMode 
+                                                                            ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                            : 'bg-white border border-gray-300 text-gray-900'
+                                                                    }`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                            </div>
+                                                            
+                                                            {/* Gudang Options */}
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                <div 
+                                                                    className={`px-3 py-2 cursor-pointer ${
+                                                                        selectedTransaksiGudangTujuan === 'all' 
+                                                                            ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                            : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                    }`}
+                                                                    onClick={() => {
+                                                                        setSelectedTransaksiGudangTujuan('all');
+                                                                        setTransaksiGudangTujuanDropdownOpen(false);
+                                                                        setSearchTransaksiGudangTujuan('');
+                                                                    }}
+                                                                >
+                                                                    🏢 Semua Gudang
+                                                                </div>
+                                                                {transaksiGudangList
+                                                                    .filter(gudang => 
+                                                                        gudang.gudang.toLowerCase().includes(searchTransaksiGudangTujuan.toLowerCase())
+                                                                    )
+                                                                    .map((gudang, index) => (
+                                                                        <div 
+                                                                            key={index}
+                                                                            className={`px-3 py-2 cursor-pointer ${
+                                                                                selectedTransaksiGudangTujuan === gudang.gudang 
+                                                                                    ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                    : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                            }`}
+                                                                            onClick={() => {
+                                                                                setSelectedTransaksiGudangTujuan(gudang.gudang);
+                                                                                setTransaksiGudangTujuanDropdownOpen(false);
+                                                                                setSearchTransaksiGudangTujuan('');
+                                                                            }}
+                                                                        >
+                                                                            📦 {gudang.gudang}
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                                
+                                                                {/* No results message */}
+                                                                {searchTransaksiGudangTujuan && transaksiGudangList.filter(gudang => 
+                                                                    gudang.gudang.toLowerCase().includes(searchTransaksiGudangTujuan.toLowerCase())
+                                                                ).length === 0 && (
+                                                                    <div className="px-3 py-2 text-gray-500 text-center">
+                                                                        Tidak ada gudang yang ditemukan
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-20`}>
+                                                    <div className="mb-1">Reg</div>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Filter..."
+                                                        value={filterTransaksiNoReg}
+                                                        onChange={(e) => setFilterTransaksiNoReg(e.target.value)}
+                                                        className={`w-full px-2 py-1 text-xs rounded border ${
+                                                            isDarkMode 
+                                                                ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' 
+                                                                : 'bg-white border-gray-300 text-gray-900'
+                                                        } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Diminta</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16`}>Dikirim</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>Status Permintaan</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>Status Penerimaan</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-24`}>Status Pengiriman</th>
+                                                <th className={`px-2 py-2 text-left text-xs font-medium uppercase tracking-wide ${getTextClasses('muted')} w-16 relative custom-dropdown-site`}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            console.log('🏢 Site dropdown opened, siteList:', siteList);
+                                                            setSiteDropdownOpen(!siteDropdownOpen);
+                                                        }}
+                                                        className="flex items-center gap-1 hover:text-blue-600 cursor-pointer"
+                                                    >
+                                                        Site
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    {siteDropdownOpen && (
+                                                        <div 
+                                                            className={`absolute top-full right-0 mt-1 w-64 rounded-md shadow-lg z-50 ${
+                                                                isDarkMode ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'
+                                                            }`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {/* Search Input */}
+                                                            <div className={`p-2 border-b ${
+                                                                isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                            }`}>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="🔍 Cari site..."
+                                                                    value={searchSite}
+                                                                    onChange={(e) => setSearchSite(e.target.value)}
+                                                                    className={`w-full px-3 py-2 text-sm rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                                                                        isDarkMode 
+                                                                            ? 'bg-gray-600 border border-gray-500 text-white placeholder-gray-400' 
+                                                                            : 'bg-white border border-gray-300 text-gray-900'
+                                                                    }`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                            </div>
+                                                            
+                                                            {/* Site Options */}
+                                                            <div className="max-h-60 overflow-y-auto">
+                                                                <div 
+                                                                    className={`px-3 py-2 cursor-pointer ${
+                                                                        filterSite === 'all' 
+                                                                            ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                            : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                    }`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setFilterSite('all');
+                                                                        setSiteDropdownOpen(false);
+                                                                        setSearchSite('');
+                                                                    }}
+                                                                >
+                                                                    🏢 Semua Site
+                                                                </div>
+                                                                {siteList
+                                                                    .filter(site => 
+                                                                        site.siteid.toLowerCase().includes(searchSite.toLowerCase())
+                                                                    )
+                                                                    .map((site, index) => (
+                                                                        <div 
+                                                                            key={index}
+                                                                            className={`px-3 py-2 cursor-pointer ${
+                                                                                filterSite === site.siteid 
+                                                                                    ? (isDarkMode ? 'bg-blue-800 text-blue-300' : 'bg-blue-50 text-blue-700')
+                                                                                    : (isDarkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-900 hover:bg-gray-100')
+                                                                            }`}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setFilterSite(site.siteid);
+                                                                                setSiteDropdownOpen(false);
+                                                                                setSearchSite('');
+                                                                            }}
+                                                                        >
+                                                                            🏢 {site.siteid}
+                                                                        </div>
+                                                                    ))
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className={`divide-y ${
@@ -1614,54 +2548,59 @@ const WebMonitoringApp = ({ user }) => {
                                                 ? 'bg-gray-800 divide-gray-600' 
                                                 : 'bg-white divide-gray-200'
                                         }`}>
-                                            {transaksiData.map((item, index) => (
+                                            {transaksiData.map((item, index) => {
+                                                // Temporary log untuk debug
+                                                if (index === 0) console.log('Sample status_penerimaan:', item.status_penerimaan);
+                                                return (
                                                 <tr key={item.id || index} className={`${
                                                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                                                 }`}>
-                                                    <td className={`px-2 py-2 text-xs font-medium ${getTextClasses('primary')} truncate`} title={item.nomor_dokumen}>{item.nomor_dokumen || '-'}</td>
-                                                    <td className={`px-2 py-2 text-xs font-mono ${getTextClasses('primary')} truncate`} title={item.part_number}>{item.part_number || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs font-medium ${getTextClasses('primary')} truncate`} title={item.no_dok}>{item.no_dok || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs font-mono ${getTextClasses('primary')} truncate`} title={item.part_no}>{item.part_no || '-'}</td>
                                                     <td className={`px-2 py-2 text-xs ${getTextClasses('primary')} truncate`} title={item.nama_barang || 'Nama barang tidak ditemukan'}>
                                                         {item.nama_barang || '-'}
                                                     </td>
                                                     <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.dari_gudang}>{item.dari_gudang || '-'}</td>
                                                     <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.ke_gudang}>{item.ke_gudang || '-'}</td>
-                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.dipasang_di_no_reg_sista}>{item.dipasang_di_no_reg_sista || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.reg}>{item.reg || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('primary')} text-center`}>{item.diminta || '-'}</td>
+                                                    <td className={`px-2 py-2 text-xs ${getTextClasses('primary')} text-center`}>{item.dikirim || '-'}</td>
                                                     <td className="px-2 py-2 text-xs">
-                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
-                                                            item.status_permintaan === 'Diproses' 
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            item.status_permintaan?.toUpperCase() === 'DIPROSES' 
                                                                 ? 'bg-yellow-100 text-yellow-800'
-                                                                : item.status_permintaan === 'Selesai'
-                                                                ? 'bg-green-100 text-green-800'
+                                                                : item.status_permintaan?.toUpperCase() === 'DITOLAK'
+                                                                ? 'bg-red-100 text-red-800'
                                                                 : 'bg-gray-100 text-gray-800'
-                                                        }`} title={item.status_permintaan}>
-                                                            {item.status_permintaan?.substring(0,3) || '-'}
+                                                        }`}>
+                                                            {item.status_permintaan ? item.status_permintaan.toUpperCase() : '-'}
                                                         </span>
                                                     </td>
                                                     <td className="px-2 py-2 text-xs">
-                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
-                                                            item.status_penerimaan === 'COMPLETE' 
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : item.status_penerimaan === 'NONE'
-                                                                ? 'bg-gray-100 text-gray-800'
-                                                                : 'bg-blue-100 text-blue-800'
-                                                        }`} title={item.status_penerimaan}>
-                                                            {item.status_penerimaan?.substring(0,3) || '-'}
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            item.status_penerimaan?.toUpperCase() === 'DIPROSES' 
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : item.status_penerimaan?.toUpperCase() === 'DITOLAK'
+                                                                ? 'bg-red-100 text-red-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {item.status_penerimaan || '-'}
                                                         </span>
                                                     </td>
                                                     <td className="px-2 py-2 text-xs">
-                                                        <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${
+                                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                                             item.status_pengiriman === 'SHIPPED' 
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : item.status_pengiriman === 'ENTERED'
                                                                 ? 'bg-blue-100 text-blue-800'
                                                                 : 'bg-gray-100 text-gray-800'
-                                                        }`} title={item.status_pengiriman}>
-                                                            {item.status_pengiriman?.substring(0,3) || '-'}
+                                                        }`}>
+                                                            {item.status_pengiriman || '-'}
                                                         </span>
                                                     </td>
                                                     <td className={`px-2 py-2 text-xs ${getTextClasses('secondary')} truncate`} title={item.site}>{item.site || '-'}</td>
                                                 </tr>
-                                            ))}
+                                            )})}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1773,6 +2712,234 @@ const WebMonitoringApp = ({ user }) => {
                         </div>
                     </div>
                 );
+            case 'users':
+                return (
+                    <div>
+                        {/* Header */}
+                        <div className={`${getCardClasses('p-6 mb-6')}`}>
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <h2 className={`text-2xl font-bold ${getTextClasses('primary')} mb-2`}>Data User</h2>
+                                    <p className={`${getTextClasses('secondary')}`}>Kelola dan pantau data pengguna sistem</p>
+                                </div>
+                                
+                                {/* Search Input */}
+                                <div className="mt-4 md:mt-0">
+                                    <label htmlFor="user-search" className={`block text-sm font-medium ${getTextClasses('secondary')} mb-2`}>
+                                        Cari User:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="user-search"
+                                        value={searchUsers}
+                                        onChange={(e) => setSearchUsers(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                setUsersCurrentPage(1);
+                                                fetchUsersData(1, usersPerPage, searchUsers);
+                                            }
+                                        }}
+                                        placeholder="🔍 Cari username, nama, email, NRP..."
+                                        className={`w-64 px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                                            isDarkMode 
+                                                ? 'bg-gray-700 border border-gray-600 text-white placeholder-gray-400' 
+                                                : 'bg-white border border-gray-300'
+                                        }`}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            setUsersCurrentPage(1);
+                                            fetchUsersData(1, usersPerPage, searchUsers);
+                                        }}
+                                        className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                    >
+                                        Cari
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Users Table */}
+                        <div className={`${getCardClasses('p-6')}`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className={`text-lg font-semibold ${getTextClasses('primary')}`}>
+                                    👥 Daftar User ({usersTotal.toLocaleString()})
+                                </h3>
+                                
+                                {/* Items per page selector */}
+                                <div className="flex items-center space-x-2">
+                                    <span className={`text-sm ${getTextClasses('secondary')}`}>Tampilkan:</span>
+                                    <select
+                                        value={usersPerPage}
+                                        onChange={(e) => {
+                                            const newPerPage = parseInt(e.target.value);
+                                            setUsersPerPage(newPerPage);
+                                            setUsersCurrentPage(1);
+                                            fetchUsersData(1, newPerPage, searchUsers);
+                                        }}
+                                        className={`px-2 py-1 rounded border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                            isDarkMode 
+                                                ? 'bg-gray-700 border-gray-600 text-white' 
+                                                : 'bg-white border-gray-300'
+                                        }`}
+                                    >
+                                        <option value={10}>10</option>
+                                        <option value={15}>15</option>
+                                        <option value={25}>25</option>
+                                        <option value={50}>50</option>
+                                    </select>
+                                    <span className={`text-sm ${getTextClasses('secondary')}`}>entri</span>
+                                </div>
+                            </div>
+
+                            {/* Loading state */}
+                            {usersLoading ? (
+                                <div className="flex items-center justify-center h-64">
+                                    <div className={`${getTextClasses('muted')}`}>Loading users data...</div>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <div className={`max-h-96 overflow-y-auto rounded-lg ${
+                                        isDarkMode ? 'border border-gray-600' : 'border border-gray-200'
+                                    }`}>
+                                        <table className="min-w-full table-auto">
+                                            <thead className={`sticky top-0 ${
+                                                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                            }`}>
+                                                <tr>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Username</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Nama</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>NRP</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Email</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Site</th>
+                                                    <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Role</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className={`divide-y ${
+                                                isDarkMode 
+                                                    ? 'bg-gray-800 divide-gray-600' 
+                                                    : 'bg-white divide-gray-200'
+                                            }`}>
+                                                {usersData.map((user, index) => (
+                                                    <tr key={user.id} className={`${
+                                                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                                    }`}>
+                                                        <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>
+                                                            {user.username}
+                                                        </td>
+                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('primary')}`}>
+                                                            {user.Nama}
+                                                        </td>
+                                                        <td className={`px-4 py-3 text-sm font-mono ${getTextClasses('secondary')}`}>
+                                                            {user.NRP}
+                                                        </td>
+                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
+                                                            {user.Email}
+                                                        </td>
+                                                        <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
+                                                            {user.site_name}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                                                user.role_name === 'SuperAdmin' 
+                                                                    ? 'bg-purple-100 text-purple-800'
+                                                                    : user.role_name === 'Admin'
+                                                                    ? 'bg-blue-100 text-blue-800'
+                                                                    : 'bg-green-100 text-green-800'
+                                                            }`}>
+                                                                {user.role_name}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {usersData.length === 0 && (
+                                            <div className="text-center py-8 text-gray-500">
+                                                {searchUsers ? `Tidak ada user yang ditemukan untuk "${searchUsers}"` : 'Tidak ada data user'}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Pagination */}
+                            {usersTotalPages > 1 && (
+                                <div className="flex items-center justify-between mt-6">
+                                    <div className={`text-sm ${getTextClasses('secondary')}`}>
+                                        Menampilkan {((usersCurrentPage - 1) * usersPerPage) + 1} - {Math.min(usersCurrentPage * usersPerPage, usersTotal)} dari {usersTotal.toLocaleString()} user
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={() => {
+                                                if (usersCurrentPage > 1) {
+                                                    const newPage = usersCurrentPage - 1;
+                                                    setUsersCurrentPage(newPage);
+                                                    fetchUsersData(newPage, usersPerPage, searchUsers);
+                                                }
+                                            }}
+                                            disabled={usersCurrentPage === 1 || usersLoading}
+                                            className={`px-3 py-2 rounded-md text-sm transition-colors ${
+                                                usersCurrentPage === 1 || usersLoading
+                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                            }`}
+                                        >
+                                            ← Sebelumnya
+                                        </button>
+                                        
+                                        <span className={`text-sm ${getTextClasses('secondary')}`}>
+                                            Halaman {usersCurrentPage} dari {usersTotalPages}
+                                        </span>
+                                        
+                                        <button
+                                            onClick={() => {
+                                                if (usersCurrentPage < usersTotalPages) {
+                                                    const newPage = usersCurrentPage + 1;
+                                                    setUsersCurrentPage(newPage);
+                                                    fetchUsersData(newPage, usersPerPage, searchUsers);
+                                                }
+                                            }}
+                                            disabled={usersCurrentPage === usersTotalPages || usersLoading}
+                                            className={`px-3 py-2 rounded-md text-sm transition-colors ${
+                                                usersCurrentPage === usersTotalPages || usersLoading
+                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                            }`}
+                                        >
+                                            Selanjutnya →
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* User Action Buttons */}
+                        <div className="mt-6 flex justify-center space-x-4">
+                            <button
+                                onClick={() => setShowAddUserModal(true)}
+                                className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2 shadow-lg"
+                            >
+                                <span className="text-lg">👤</span>
+                                <span>Tambah User Baru</span>
+                            </button>
+                            <button
+                                onClick={() => setShowEditUserModal(true)}
+                                className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 shadow-lg"
+                            >
+                                <span className="text-lg">✏️</span>
+                                <span>Edit User</span>
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteUserModal(true)}
+                                className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center space-x-2 shadow-lg"
+                            >
+                                <span className="text-lg">🗑️</span>
+                                <span>Hapus User</span>
+                            </button>
+                        </div>
+                    </div>
+                );
             default:
                 return <div>Select a tab to view content</div>;
         }
@@ -1802,10 +2969,10 @@ const WebMonitoringApp = ({ user }) => {
             }`}>
                 <div className="p-4 group-hover:p-6">
                     <div className="flex items-center">
-                        <div className="w-8 h-8 group-hover:w-10 group-hover:h-10 transition-all duration-300 flex-shrink-0">
+                        <div className="w-12 h-12 group-hover:w-14 group-hover:h-14 transition-all duration-300 flex-shrink-0">
                             <img 
-                                src="/images/Lambang_TNI_AU.png" 
-                                alt="Logo TNI AU" 
+                                src="/images/logo_airlogs.png" 
+                                alt="Logo AIRLOGS" 
                                 className="w-full h-full object-contain"
                             />
                         </div>
@@ -1820,16 +2987,13 @@ const WebMonitoringApp = ({ user }) => {
                             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
                             { id: 'gudang', label: 'Gudang', icon: '🏢' },
                             { id: 'transaksi', label: 'Transaksi', icon: '💳' },
-                            { id: 'add-user', label: 'Tambah User', icon: '👤' }
+                            { id: 'users', label: 'User', icon: '👥' }
+                            
                         ].map(menu => (
                             <button
                                 key={menu.id}
                                 onClick={() => {
-                                    if (menu.id === 'add-user') {
-                                        setShowAddUserModal(true);
-                                    } else {
-                                        setActiveTab(menu.id);
-                                    }
+                                    setActiveTab(menu.id);
                                 }}
                                 className={`w-full flex items-center space-x-3 px-2 group-hover:px-4 py-3 rounded-lg transition-all duration-300 text-left relative ${
                                     activeTab === menu.id
@@ -1838,7 +3002,7 @@ const WebMonitoringApp = ({ user }) => {
                                 }`}
                                 title={menu.label}
                             >
-                                <span className="text-xl min-w-[24px] flex justify-center">{menu.icon}</span>
+                                <span className="text-xl flex-shrink-0">{menu.icon}</span>
                                 <span className="font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 delay-150 whitespace-nowrap">
                                     {menu.label}
                                 </span>
@@ -1976,8 +3140,8 @@ const WebMonitoringApp = ({ user }) => {
                                         </div>
                                     ) : (
                                         <select
-                                            name="id_satuan"
-                                            value={addUserForm.id_satuan}
+                                            name="siteid"
+                                            value={addUserForm.siteid}
                                             onChange={handleAddUserChange}
                                             required
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -2049,6 +3213,808 @@ const WebMonitoringApp = ({ user }) => {
                     </div>
                 </div>
             )}
+
+            {/* Modal Edit User */}
+            {showEditUserModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-green-700">Edit User</h2>
+                            <button
+                                onClick={() => {
+                                    setShowEditUserModal(false);
+                                    setEditUserSearch('');
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        
+                        {/* Search Input */}
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="🔍 Cari username atau nama..."
+                                value={editUserSearch}
+                                onChange={(e) => setEditUserSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                        </div>
+
+                        {/* Users Table */}
+                        <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+                            <table className="w-full text-sm">
+                                <thead className="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left font-medium text-gray-700">Username</th>
+                                        <th className="px-3 py-2 text-left font-medium text-gray-700">Nama</th>
+                                        <th className="px-3 py-2 text-center font-medium text-gray-700">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {usersData
+                                        .filter(user => 
+                                            user.id_status !== 1 && // Exclude superadmin
+                                            (user.username.toLowerCase().includes(editUserSearch.toLowerCase()) ||
+                                            user.Nama.toLowerCase().includes(editUserSearch.toLowerCase()))
+                                        )
+                                        .map((user, index) => (
+                                            <tr key={index} className="hover:bg-gray-50">
+                                                <td className="px-3 py-2 font-medium text-gray-900">{user.username}</td>
+                                                <td className="px-3 py-2 text-gray-700">{user.Nama}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    <button
+                                                        onClick={() => {
+                                                            setUserToEdit(user);
+                                                            setShowEditOptionsModal(true);
+                                                        }}
+                                                        className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </table>
+                            {usersData.filter(user => 
+                                user.id_status !== 1 && // Exclude superadmin
+                                (user.username.toLowerCase().includes(editUserSearch.toLowerCase()) ||
+                                user.Nama.toLowerCase().includes(editUserSearch.toLowerCase()))
+                            ).length === 0 && (
+                                <div className="text-center py-4 text-gray-500">
+                                    {editUserSearch ? 'Tidak ada user yang ditemukan' : 'Tidak ada data user'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Delete User */}
+            {showDeleteUserModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-red-700">Hapus User</h2>
+                            <button
+                                onClick={() => {
+                                    setShowDeleteUserModal(false);
+                                    setDeleteUserSearch('');
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        
+                        {/* Search Input */}
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="🔍 Cari username atau nama..."
+                                value={deleteUserSearch}
+                                onChange={(e) => setDeleteUserSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                        </div>
+
+                        {/* Users Table */}
+                        <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+                            <table className="w-full text-sm">
+                                <thead className="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left font-medium text-gray-700">Username</th>
+                                        <th className="px-3 py-2 text-left font-medium text-gray-700">Nama</th>
+                                        <th className="px-3 py-2 text-center font-medium text-gray-700">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {usersData
+                                        .filter(user => 
+                                            user.id_status !== 1 && // Exclude superadmin
+                                            (user.username.toLowerCase().includes(deleteUserSearch.toLowerCase()) ||
+                                            user.Nama.toLowerCase().includes(deleteUserSearch.toLowerCase()))
+                                        )
+                                        .map((user, index) => (
+                                            <tr key={index} className="hover:bg-gray-50">
+                                                <td className="px-3 py-2 font-medium text-gray-900">{user.username}</td>
+                                                <td className="px-3 py-2 text-gray-700">{user.Nama}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    <button
+                                                        onClick={() => {
+                                                            setUserToDelete(user);
+                                                            setShowDeleteConfirmModal(true);
+                                                        }}
+                                                        className="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-xs"
+                                                    >
+                                                        Hapus
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </table>
+                            {usersData.filter(user => 
+                                user.id_status !== 1 && // Exclude superadmin
+                                (user.username.toLowerCase().includes(deleteUserSearch.toLowerCase()) ||
+                                user.Nama.toLowerCase().includes(deleteUserSearch.toLowerCase()))
+                            ).length === 0 && (
+                                <div className="text-center py-4 text-gray-500">
+                                    {deleteUserSearch ? 'Tidak ada user yang ditemukan' : 'Tidak ada data user'}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Delete Confirmation */}
+            {showDeleteConfirmModal && userToDelete && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all">
+                        {/* Icon and Title */}
+                        <div className="text-center mb-4">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Konfirmasi Hapus User</h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                                Apakah Anda yakin ingin menghapus user:
+                            </p>
+                            <div className="bg-gray-50 rounded-md p-3 mb-4">
+                                <p className="font-semibold text-gray-900">{userToDelete.username}</p>
+                                <p className="text-sm text-gray-600">{userToDelete.Nama}</p>
+                            </div>
+                            
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteConfirmModal(false);
+                                    setUserToDelete(null);
+                                    setDeleteLoading(false);
+                                }}
+                                disabled={deleteLoading}
+                                className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+                                    deleteLoading 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                }`}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleDeleteUser}
+                                disabled={deleteLoading}
+                                className={`flex-1 px-4 py-2 rounded-md transition-colors duration-200 font-medium flex items-center justify-center ${
+                                    deleteLoading 
+                                        ? 'bg-red-400 cursor-not-allowed' 
+                                        : 'bg-red-600 hover:bg-red-700'
+                                } text-white`}
+                            >
+                                {deleteLoading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Menghapus...
+                                    </>
+                                ) : (
+                                    'Hapus'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Edit Options */}
+            {showEditOptionsModal && userToEdit && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-green-700">Edit User</h2>
+                                <p className="text-sm text-gray-600">Pilih data yang ingin diubah</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowEditOptionsModal(false);
+                                    setUserToEdit(null);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* User Info */}
+                        <div className="bg-gray-50 rounded-md p-3 mb-6">
+                            <p className="font-semibold text-gray-900">{userToEdit.username}</p>
+                            <p className="text-sm text-gray-600">{userToEdit.Nama}</p>
+                        </div>
+
+                        {/* Edit Options */}
+                        <div className="space-y-3">
+                            {[
+                                { id: 'nama', label: 'Nama', icon: '👤', current: userToEdit.Nama },
+                                { id: 'nrp', label: 'NRP', icon: '🔢', current: userToEdit.NRP },
+                                { id: 'email', label: 'Email', icon: '📧', current: userToEdit.Email },
+                                { id: 'site', label: 'Site', icon: '🏢', current: userToEdit.site_name },
+                                { id: 'role', label: 'Role', icon: '🛡️', current: userToEdit.role_name },
+                                { id: 'password', label: 'Password', icon: '🔒', current: '••••••••' }
+                            ].map((option) => (
+                                <button
+                                    key={option.id}
+                                    onClick={() => {
+                                        setEditField(option.id);
+                                        setEditValue(''); // Always start with empty value
+                                        setShowEditOptionsModal(false);
+                                        setShowEditFormModal(true);
+                                        setEditError('');
+                                        setEditSuccess(false);
+                                    }}
+                                    className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors duration-200"
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        <span className="text-xl">{option.icon}</span>
+                                        <div className="text-left">
+                                            <p className="font-medium text-gray-900">{option.label}</p>
+                                            <p className="text-xs text-gray-500 truncate max-w-48">{option.current}</p>
+                                        </div>
+                                    </div>
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Cancel Button */}
+                        <div className="mt-6">
+                            <button
+                                onClick={() => {
+                                    setShowEditOptionsModal(false);
+                                    setUserToEdit(null);
+                                }}
+                                className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-200 font-medium"
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Edit Form */}
+            {showEditFormModal && userToEdit && editField && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-green-700">Edit {editField.charAt(0).toUpperCase() + editField.slice(1)}</h2>
+                                <p className="text-sm text-gray-600">{userToEdit.username} - {userToEdit.Nama}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowEditFormModal(false);
+                                    setEditField('');
+                                    setEditValue('');
+                                    setEditError('');
+                                    setEditSuccess(false);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            // TODO: Implement actual edit functionality
+                            alert(`Update ${editField} to: ${editValue}`);
+                        }}>
+                            {/* Input Field */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {editField === 'nama' && 'Masukkan Nama Lengkap Baru'}
+                                    {editField === 'nrp' && 'Masukkan NRP Baru'}
+                                    {editField === 'email' && 'Masukkan Email Baru'}
+                                    {editField === 'password' && 'Masukkan Password Baru'}
+                                    {editField === 'site' && 'Pilih Site Baru'}
+                                    {editField === 'role' && 'Pilih Role Baru'}
+                                </label>
+                                
+                                {/* Show current value info */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-3">
+                                    <p className="text-xs text-blue-700">
+                                        <span className="font-medium">Data saat ini: </span>
+                                        {editField === 'nama' && userToEdit.Nama}
+                                        {editField === 'nrp' && userToEdit.NRP}
+                                        {editField === 'email' && userToEdit.Email}
+                                        {editField === 'password' && '••••••••'}
+                                        {editField === 'site' && userToEdit.site_name}
+                                        {editField === 'role' && userToEdit.role_name}
+                                    </p>
+                                </div>
+                                
+                                {/* Text inputs for nama, nrp, email, password */}
+                                {['nama', 'nrp', 'email', 'password'].includes(editField) && (
+                                    <input
+                                        type={editField === 'password' ? 'password' : editField === 'email' ? 'email' : 'text'}
+                                        value={editValue}
+                                        onChange={(e) => setEditValue(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        placeholder={
+                                            editField === 'nama' ? 'Contoh: Ahmad Suryadi' :
+                                            editField === 'nrp' ? 'Contoh: 123456789' :
+                                            editField === 'email' ? 'Contoh: ahmad@email.com' :
+                                            editField === 'password' ? 'Minimal 8 karakter' : ''
+                                        }
+                                        required
+                                    />
+                                )}
+
+                                {/* Dropdown for site */}
+                                {editField === 'site' && (
+                                    <select
+                                        value={editValue}
+                                        onChange={(e) => setEditValue(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    >
+                                        <option value="">-- Pilih Site Baru --</option>
+                                        {sites.length > 0 ? sites.map((site) => (
+                                            <option key={site.id} value={site.siteid}>
+                                                {site.siteid}
+                                            </option>
+                                        )) : (
+                                            <option value="" disabled>Loading sites...</option>
+                                        )}
+                                    </select>
+                                )}
+
+                                {/* Dropdown for role */}
+                                {editField === 'role' && (
+                                    <select
+                                        value={editValue}
+                                        onChange={(e) => setEditValue(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    >
+                                        <option value="">-- Pilih Role Baru --</option>
+                                        {rolesList.length > 0 ? rolesList.map((role) => (
+                                            <option key={role.id} value={role.name}>
+                                                {role.name}
+                                            </option>
+                                        )) : (
+                                            <option value="" disabled>Loading roles...</option>
+                                        )}
+                                    </select>
+                                )}
+                            </div>
+
+                            {/* Error Message */}
+                            {editError && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+                                    <div className="flex items-center">
+                                        <span className="text-red-400 text-xl mr-2">❌</span>
+                                        <p className="text-sm font-medium text-red-800">
+                                            {editError}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Success Message */}
+                            {editSuccess && (
+                                <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-4">
+                                    <div className="flex items-center">
+                                        <span className="text-green-400 text-xl mr-2">✅</span>
+                                        <p className="text-sm font-medium text-green-800">
+                                            Data berhasil diupdate!
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowEditFormModal(false);
+                                        setEditField('');
+                                        setEditValue('');
+                                        setEditError('');
+                                        setEditSuccess(false);
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-200 font-medium"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={editLoading}
+                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200 font-medium disabled:bg-green-300"
+                                >
+                                    {editLoading ? 'Menyimpan...' : 'Simpan'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Gudang */}
+            {showGudangModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className={`${getCardClasses('p-6 max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col')}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className={`text-xl font-bold ${getTextClasses('primary')}`}>
+                                🏢 Data Gudang
+                            </h3>
+                            <button
+                                onClick={() => setShowGudangModal(false)}
+                                className="text-gray-500 hover:text-gray-700 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Button Add Gudang */}
+                        <div className="mb-4">
+                            <button
+                                onClick={() => setShowAddGudangModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium"
+                            >
+                                ➕ Tambah Gudang
+                            </button>
+                        </div>
+
+                        {/* Table with scroll */}
+                        <div className="flex-1 overflow-y-auto mb-4">
+                            {gudangModalLoading ? (
+                                <div className="text-center py-8">
+                                    <div className="inline-flex items-center px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg">
+                                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Memuat data...
+                                    </div>
+                                </div>
+                            ) : gudangModalData.length > 0 ? (
+                                <table className="min-w-full table-auto">
+                                    <thead className={`sticky top-0 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                        <tr>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>No</th>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Nama Gudang</th>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Site</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
+                                        {gudangModalData.map((item, index) => (
+                                            <tr key={index} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                                <td className={`px-4 py-3 text-sm ${getTextClasses('primary')}`}>
+                                                    {(gudangModalPage - 1) * itemsPerModalPage + index + 1}
+                                                </td>
+                                                <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>
+                                                    🏢 {item.gudang}
+                                                </td>
+                                                <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
+                                                    {item.site_name || '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <span className="text-4xl mb-4 block">📭</span>
+                                    <p className="text-lg font-medium">Belum ada data gudang</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {gudangModalTotal > itemsPerModalPage && (
+                            <div className="flex justify-between items-center pt-4 border-t">
+                                <div className={`text-sm ${getTextClasses('secondary')}`}>
+                                    Total: {gudangModalTotal} gudang
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => fetchGudangModalData(gudangModalPage - 1)}
+                                        disabled={gudangModalPage === 1}
+                                        className={`px-3 py-1 rounded ${
+                                            gudangModalPage === 1
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                    >
+                                        ← Prev
+                                    </button>
+                                    <span className={`px-3 py-1 ${getTextClasses('primary')}`}>
+                                        Page {gudangModalPage} of {Math.ceil(gudangModalTotal / itemsPerModalPage)}
+                                    </span>
+                                    <button
+                                        onClick={() => fetchGudangModalData(gudangModalPage + 1)}
+                                        disabled={gudangModalPage >= Math.ceil(gudangModalTotal / itemsPerModalPage)}
+                                        className={`px-3 py-1 rounded ${
+                                            gudangModalPage >= Math.ceil(gudangModalTotal / itemsPerModalPage)
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                    >
+                                        Next →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Site */}
+            {showSiteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className={`${getCardClasses('p-6 max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col')}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className={`text-xl font-bold ${getTextClasses('primary')}`}>
+                                🏛️ Data Site
+                            </h3>
+                            <button
+                                onClick={() => setShowSiteModal(false)}
+                                className="text-gray-500 hover:text-gray-700 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Button Add Site */}
+                        <div className="mb-4">
+                            <button
+                                onClick={() => setShowAddSiteModal(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium"
+                            >
+                                ➕ Tambah Site
+                            </button>
+                        </div>
+
+                        {/* Table with scroll */}
+                        <div className="flex-1 overflow-y-auto mb-4">
+                            {siteModalLoading ? (
+                                <div className="text-center py-8">
+                                    <div className="inline-flex items-center px-4 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg">
+                                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Memuat data...
+                                    </div>
+                                </div>
+                            ) : siteModalData.length > 0 ? (
+                                <table className="min-w-full table-auto">
+                                    <thead className={`sticky top-0 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                                        <tr>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>No</th>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Site ID</th>
+                                            <th className={`px-4 py-3 text-left text-sm font-medium ${getTextClasses('secondary')}`}>Total Gudang</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
+                                        {siteModalData.map((item, index) => (
+                                            <tr key={index} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                                                <td className={`px-4 py-3 text-sm ${getTextClasses('primary')}`}>
+                                                    {(siteModalPage - 1) * itemsPerModalPage + index + 1}
+                                                </td>
+                                                <td className={`px-4 py-3 text-sm font-medium ${getTextClasses('primary')}`}>
+                                                    🏛️ {item.siteid}
+                                                </td>
+                                                <td className={`px-4 py-3 text-sm ${getTextClasses('secondary')}`}>
+                                                    {item.total_gudang || 0} gudang
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <span className="text-4xl mb-4 block">📭</span>
+                                    <p className="text-lg font-medium">Belum ada data site</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {siteModalTotal > itemsPerModalPage && (
+                            <div className="flex justify-between items-center pt-4 border-t">
+                                <div className={`text-sm ${getTextClasses('secondary')}`}>
+                                    Total: {siteModalTotal} site
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => fetchSiteModalData(siteModalPage - 1)}
+                                        disabled={siteModalPage === 1}
+                                        className={`px-3 py-1 rounded ${
+                                            siteModalPage === 1
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                    >
+                                        ← Prev
+                                    </button>
+                                    <span className={`px-3 py-1 ${getTextClasses('primary')}`}>
+                                        Page {siteModalPage} of {Math.ceil(siteModalTotal / itemsPerModalPage)}
+                                    </span>
+                                    <button
+                                        onClick={() => fetchSiteModalData(siteModalPage + 1)}
+                                        disabled={siteModalPage >= Math.ceil(siteModalTotal / itemsPerModalPage)}
+                                        className={`px-3 py-1 rounded ${
+                                            siteModalPage >= Math.ceil(siteModalTotal / itemsPerModalPage)
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                    >
+                                        Next →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Add Gudang */}
+            {showAddGudangModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className={`${getCardClasses('p-6 max-w-md w-full')}`}>
+                        <h3 className={`text-xl font-bold ${getTextClasses('primary')} mb-4`}>
+                            ➕ Tambah Gudang Baru
+                        </h3>
+                        <form onSubmit={handleAddGudang}>
+                            <div className="mb-4">
+                                <label className={`block text-sm font-medium mb-2 ${getTextClasses('primary')}`}>
+                                    Nama Gudang <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={addGudangForm.location}
+                                    onChange={(e) => setAddGudangForm({ ...addGudangForm, location: e.target.value })}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                        isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                                    }`}
+                                    placeholder="Contoh: Gudang Utama"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className={`block text-sm font-medium mb-2 ${getTextClasses('primary')}`}>
+                                    Site <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={addGudangForm.idsite}
+                                    onChange={(e) => setAddGudangForm({ ...addGudangForm, idsite: e.target.value })}
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                        isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                                    }`}
+                                    required
+                                >
+                                    <option value="">-- Pilih Site --</option>
+                                    {siteList.map((site) => (
+                                        <option key={site.id} value={site.id}>
+                                            {site.siteid}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddGudangModal(false);
+                                        setAddGudangForm({ location: '', idsite: '' });
+                                    }}
+                                    className={`flex-1 px-4 py-2 rounded-md ${
+                                        isDarkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={addGudangLoading}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                                >
+                                    {addGudangLoading ? 'Menyimpan...' : 'Simpan'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Add Site */}
+            {showAddSiteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className={`${getCardClasses('p-6 max-w-md w-full')}`}>
+                        <h3 className={`text-xl font-bold ${getTextClasses('primary')} mb-4`}>
+                            ➕ Tambah Site Baru
+                        </h3>
+                        <form onSubmit={handleAddSite}>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium mb-2">Site ID</label>
+                                <input
+                                    type="text"
+                                    value={addSiteForm.siteid}
+                                    onChange={(e) => setAddSiteForm({ ...addSiteForm, siteid: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Contoh: LANUD ATS"
+                                    required
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowAddSiteModal(false);
+                                        setAddSiteForm({ siteid: '' });
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                    Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            <SuccessModal 
+                show={showSuccessModal}
+                message={successMessage}
+                onClose={() => setShowSuccessModal(false)}
+                isDarkMode={isDarkMode}
+            />
         </div>
     );
 };

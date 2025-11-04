@@ -9,7 +9,7 @@ const AddUserPage = () => {
     Nama: '',
     NRP: '',
     Email: '',
-    id_satuan: ''
+    siteid: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,7 +63,7 @@ const AddUserPage = () => {
       });
       if (res.ok) {
         setSuccess(true);
-        setForm({ username: '', password: '', Nama: '', NRP: '', Email: '', id_satuan: '' });
+        setForm({ username: '', password: '', Nama: '', NRP: '', Email: '', siteid: '' });
       } else {
         const data = await res.json();
         setError(data.message || 'Gagal menambah user');
@@ -207,8 +207,8 @@ const AddUserPage = () => {
                     </div>
                   ) : (
                     <select
-                      name="id_satuan"
-                      value={form.id_satuan}
+                      name="siteid"
+                      value={form.siteid}
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition-colors bg-white"
@@ -216,7 +216,7 @@ const AddUserPage = () => {
                       <option value="">Pilih Site</option>
                       {sites.map((site) => (
                         <option key={site.id} value={site.id}>
-                          {site.Location}
+                          {site.siteid}
                         </option>
                       ))}
                     </select>
