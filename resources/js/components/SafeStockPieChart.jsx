@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
-const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Barang', isDarkMode = false, siteFilter = null, userLocId = null, userRole = null }) => {
+const SafeStockPieChart = ({ 
+  selectedGudang, 
+  title = '📊 Distribusi Stock Barang', 
+  isDarkMode = false, 
+  siteFilter = null, 
+  userLocId = null, 
+  userRole, 
+  filterItemId = '',
+  filterPartNumber = '',
+  filterNamaBarang = 'all'
+}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,7 +46,7 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
 
   useEffect(() => {
     fetchStockData();
-  }, [selectedGudang, siteFilter, userLocId, userRole]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedGudang, siteFilter, userLocId, userRole, filterItemId, filterPartNumber, filterNamaBarang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStockData = async () => {
     try {
@@ -56,9 +66,36 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
         params.append('user_locid', userLocId);
         params.append('user_role', 'user');
       }
-      // Add site filter if provided (for Admin role)
-      else if (siteFilter) {
+      // Add ADMIN site filter
+      else if (userRole === 'admin' && siteFilter) {
         params.append('site_filter', siteFilter);
+        params.append('user_role', 'admin');
+      }
+      // SuperAdmin can filter by site too
+      else if (userRole === 'superadmin') {
+        params.append('user_role', 'superadmin');
+        if (siteFilter && siteFilter !== 'all') {
+          params.append('site_filter', siteFilter);
+        }
+      }
+      // Fallback: if no role is provided but siteFilter exists
+      else if (siteFilter && siteFilter !== 'all') {
+        params.append('site_filter', siteFilter);
+      }
+      
+      // Add Item ID filter
+      if (filterItemId) {
+        params.append('filter_itemid', filterItemId);
+      }
+      
+      // Add Part Number filter
+      if (filterPartNumber) {
+        params.append('filter_partnumber', filterPartNumber);
+      }
+      
+      // Add Nama Barang filter
+      if (filterNamaBarang && filterNamaBarang !== 'all') {
+        params.append('filter_namabarang', filterNamaBarang);
       }
       
       // Build final URL
@@ -143,9 +180,36 @@ const SafeStockPieChart = ({ selectedGudang, title = '📊 Distribusi Stock Bara
         params.append('user_locid', userLocId);
         params.append('user_role', 'user');
       }
-      // Add site filter if provided (for Admin role)
-      else if (siteFilter) {
+      // Add ADMIN site filter
+      else if (userRole === 'admin' && siteFilter) {
         params.append('site_filter', siteFilter);
+        params.append('user_role', 'admin');
+      }
+      // SuperAdmin can filter by site too
+      else if (userRole === 'superadmin') {
+        params.append('user_role', 'superadmin');
+        if (siteFilter && siteFilter !== 'all') {
+          params.append('site_filter', siteFilter);
+        }
+      }
+      // Fallback: if no role is provided but siteFilter exists
+      else if (siteFilter && siteFilter !== 'all') {
+        params.append('site_filter', siteFilter);
+      }
+      
+      // Add Item ID filter
+      if (filterItemId) {
+        params.append('filter_itemid', filterItemId);
+      }
+      
+      // Add Part Number filter
+      if (filterPartNumber) {
+        params.append('filter_partnumber', filterPartNumber);
+      }
+      
+      // Add Nama Barang filter
+      if (filterNamaBarang && filterNamaBarang !== 'all') {
+        params.append('filter_namabarang', filterNamaBarang);
       }
       
       const url = `/api_stock_chart.php?${params.toString()}`;

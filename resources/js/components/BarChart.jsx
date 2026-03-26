@@ -5,9 +5,16 @@ import React, { useEffect, useRef } from 'react';
  * @param {Array} data - Array of objects with 'name' and 'value' properties
  * @param {String} title - Chart title (optional)
  * @param {Boolean} compact - Use compact layout (optional)
+ * @param {Function} onBarClick - Callback when clicking a bar (optional)
  */
-const BarChart = ({ data, title, compact = false }) => {
+const BarChart = ({ data, title, compact = false, onBarClick }) => {
     const chartRef = useRef(null);
+    const onBarClickRef = useRef(onBarClick);
+
+    // Update ref when onBarClick changes
+    useEffect(() => {
+        onBarClickRef.current = onBarClick;
+    }, [onBarClick]);
 
     useEffect(() => {
         if (!data || data.length === 0) return;
@@ -74,6 +81,24 @@ const BarChart = ({ data, title, compact = false }) => {
             // Bar background
             const barBg = document.createElement('div');
             barBg.className = 'w-full h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden relative';
+            
+            // Make clickable if callback provided
+            if (onBarClickRef.current) {
+                barBg.style.cursor = 'pointer';
+                barBg.onclick = (e) => {
+                    e.stopPropagation();
+                    if (onBarClickRef.current) {
+                        onBarClickRef.current(item, e);
+                    }
+                };
+                // Add hover effect
+                barBg.onmouseenter = () => {
+                    barBg.style.opacity = '0.8';
+                };
+                barBg.onmouseleave = () => {
+                    barBg.style.opacity = '1';
+                };
+            }
 
             // Bar fill
             const barFill = document.createElement('div');
@@ -115,7 +140,7 @@ const BarChart = ({ data, title, compact = false }) => {
 
         chartContainer.appendChild(chart);
 
-    }, [data, title, compact]);
+    }, [data, title, compact]); // Removed onBarClick from dependencies
 
     if (!data || data.length === 0) {
         return (

@@ -18,8 +18,13 @@ try {
     $userLocId = isset($_GET['user_locid']) ? (int)$_GET['user_locid'] : null; // Cast to integer
     $userRole = $_GET['user_role'] ?? null; // user, admin, or superadmin
     
+    // Additional filters
+    $filterItemId = $_GET['filter_itemid'] ?? null;
+    $filterPartNumber = $_GET['filter_partnumber'] ?? null;
+    $filterNamaBarang = $_GET['filter_namabarang'] ?? null;
+    
     // Debug log
-    error_log("Stock Chart - Params received: filter=$filter, detail=$detail, site=$siteFilter, user_locid=$userLocId, user_role=$userRole");
+    error_log("Stock Chart - Params received: filter=$filter, detail=$detail, site=$siteFilter, user_locid=$userLocId, user_role=$userRole, filter_itemid=$filterItemId, filter_partnumber=$filterPartNumber, filter_namabarang=$filterNamaBarang");
     
     // Database connection
     $pdo = new PDO('mysql:host=127.0.0.1;dbname=web_monitoring', 'root', '');
@@ -54,13 +59,18 @@ try {
         $params[] = $userLocId;
         error_log("Stock Chart - USER filter applied: idlocation = $userLocId");
     }
-    // Apply site filter if provided (filter by site.siteid string) - for Admin role
-    elseif ($siteFilter) {
+    // Apply ADMIN site filter (role-based)
+    elseif ($userRole === 'admin' && $siteFilter && $siteFilter !== 'all') {
         $sql .= " AND location.idsite = (SELECT id FROM site WHERE siteid = ? LIMIT 1)";
         $params[] = $siteFilter;
-        error_log("Stock Chart - SITE filter applied: siteid = $siteFilter");
-    } else {
-        error_log("Stock Chart - NO FILTER applied (SuperAdmin mode or missing params)");
+        error_log("Stock Chart - ADMIN SITE filter applied: siteid = $siteFilter");
+    }
+    
+    // Apply additional site filter for SuperAdmin manual filtering
+    if ($userRole === 'superadmin' && $siteFilter && $siteFilter !== 'all') {
+        $sql .= " AND location.idsite = (SELECT id FROM site WHERE siteid = ? LIMIT 1)";
+        $params[] = $siteFilter;
+        error_log("Stock Chart - SUPERADMIN SITE filter applied: siteid = $siteFilter");
     }
     
     // Apply filter if not 'all'
@@ -68,6 +78,27 @@ try {
         $sql .= " AND location.location = ?";
         $params[] = $filter;
         error_log("Stock Chart - GUDANG filter applied: location = $filter");
+    }
+    
+    // Filter by Item ID
+    if ($filterItemId) {
+        $sql .= " AND inventory.itemnum LIKE ?";
+        $params[] = '%' . $filterItemId . '%';
+        error_log("Stock Chart - ITEM ID filter applied: itemnum LIKE %$filterItemId%");
+    }
+    
+    // Filter by Part Number
+    if ($filterPartNumber) {
+        $sql .= " AND item.pn LIKE ?";
+        $params[] = '%' . $filterPartNumber . '%';
+        error_log("Stock Chart - PART NUMBER filter applied: pn LIKE %$filterPartNumber%");
+    }
+    
+    // Filter by Nama Barang
+    if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+        $sql .= " AND item.description = ?";
+        $params[] = $filterNamaBarang;
+        error_log("Stock Chart - NAMA BARANG filter applied: description = $filterNamaBarang");
     }
     
     // Apply detail filter for specific category

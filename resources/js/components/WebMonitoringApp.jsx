@@ -89,6 +89,8 @@ const WebMonitoringApp = ({ user }) => {
     const [statusDetailLoading, setStatusDetailLoading] = useState(false);
     const [hoveredStatus, setHoveredStatus] = useState(null);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, side: 'right' });
+    const [tooltipPage, setTooltipPage] = useState(1);
+    const tooltipPerPage = 5;
 
     // State untuk dark mode
     const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -313,7 +315,7 @@ const WebMonitoringApp = ({ user }) => {
             fetchStatusStatistics();
             fetchWarehouseStatistics();
         }
-    }, [activeTab, selectedTransaksiGudang]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [activeTab, selectedTransaksiGudang, selectedTransaksiGudangTujuan, filterTransaksiNoDok, filterTransaksiPartNumber, filterTransaksiNoReg, filterTransaksiNamaBarang, filterSite]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -498,7 +500,34 @@ const WebMonitoringApp = ({ user }) => {
     const fetchStatusStatistics = async () => {
         try {
             setStatusChartLoading(true);
-            const response = await fetch(`/api/status-statistics?filter=${selectedTransaksiGudang}`);
+            
+            // Build query params with all transaksi filters
+            const params = new URLSearchParams();
+            params.append('filter', selectedTransaksiGudang);
+            
+            if (filterTransaksiNoDok) {
+                params.append('filter_nodok', filterTransaksiNoDok);
+            }
+            if (filterTransaksiPartNumber) {
+                params.append('filter_partnumber', filterTransaksiPartNumber);
+            }
+            if (filterTransaksiNoReg) {
+                params.append('filter_noreg', filterTransaksiNoReg);
+            }
+            if (filterTransaksiNamaBarang && filterTransaksiNamaBarang !== 'all') {
+                params.append('filter_namabarang', filterTransaksiNamaBarang);
+            }
+            if (selectedTransaksiGudang && selectedTransaksiGudang !== 'all') {
+                params.append('filter_from', selectedTransaksiGudang);
+            }
+            if (selectedTransaksiGudangTujuan && selectedTransaksiGudangTujuan !== 'all') {
+                params.append('filter_to', selectedTransaksiGudangTujuan);
+            }
+            if (filterSite && filterSite !== 'all') {
+                params.append('filter_site', filterSite);
+            }
+            
+            const response = await fetch(`/api/status-statistics?${params.toString()}`);
             const data = await response.json();
             console.log('📊 Status statistics response:', data);
             
@@ -515,7 +544,35 @@ const WebMonitoringApp = ({ user }) => {
     const fetchWarehouseStatistics = async () => {
         try {
             setWarehouseLoading(true);
-            const response = await fetch(`/api/top-active-warehouses?filter=${selectedTransaksiGudang}&limit=10`);
+            
+            // Build query params with all transaksi filters
+            const params = new URLSearchParams();
+            params.append('filter', selectedTransaksiGudang);
+            params.append('limit', '10');
+            
+            if (filterTransaksiNoDok) {
+                params.append('filter_nodok', filterTransaksiNoDok);
+            }
+            if (filterTransaksiPartNumber) {
+                params.append('filter_partnumber', filterTransaksiPartNumber);
+            }
+            if (filterTransaksiNoReg) {
+                params.append('filter_noreg', filterTransaksiNoReg);
+            }
+            if (filterTransaksiNamaBarang && filterTransaksiNamaBarang !== 'all') {
+                params.append('filter_namabarang', filterTransaksiNamaBarang);
+            }
+            if (selectedTransaksiGudang && selectedTransaksiGudang !== 'all') {
+                params.append('filter_from', selectedTransaksiGudang);
+            }
+            if (selectedTransaksiGudangTujuan && selectedTransaksiGudangTujuan !== 'all') {
+                params.append('filter_to', selectedTransaksiGudangTujuan);
+            }
+            if (filterSite && filterSite !== 'all') {
+                params.append('filter_site', filterSite);
+            }
+            
+            const response = await fetch(`/api/top-active-warehouses?${params.toString()}`);
             const data = await response.json();
             console.log('🏭 Warehouse statistics response:', data);
             
@@ -547,42 +604,66 @@ const WebMonitoringApp = ({ user }) => {
     };
 
     const calculateTooltipPosition = (event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
-        const tooltipWidth = 320; // estimated tooltip width
-        const tooltipHeight = 200; // estimated tooltip height
+        const tooltipWidth = 600; // estimated tooltip width
+        const tooltipHeight = 500; // estimated tooltip height
         
-        // Calculate if tooltip fits on the right side
-        const fitsRight = rect.right + tooltipWidth + 16 <= windowWidth;
+        // Get cursor position from event
+        const cursorX = event.clientX || (windowWidth / 2);
+        const cursorY = event.clientY || (windowHeight / 2);
         
-        // Calculate if tooltip fits on the left side
-        const fitsLeft = rect.left - tooltipWidth - 16 >= 0;
+        // Calculate tooltip position with cursor at center
+        let xPos = cursorX - (tooltipWidth / 2);
+        let yPos = cursorY - (tooltipHeight / 2);
         
-        // Determine optimal side
-        let side = 'right';
-        if (!fitsRight && fitsLeft) {
-            side = 'left';
-        } else if (!fitsRight && !fitsLeft) {
-            // If neither side fits perfectly, choose based on available space
-            const rightSpace = windowWidth - rect.right;
-            const leftSpace = rect.left;
-            side = rightSpace > leftSpace ? 'right' : 'left';
+        // Adjust horizontal position if tooltip goes outside window
+        if (xPos < 16) {
+            xPos = 16;
+        } else if (xPos + tooltipWidth > windowWidth - 16) {
+            xPos = windowWidth - tooltipWidth - 16;
         }
         
-        // Calculate vertical position
-        let yOffset = 0;
-        const tooltipBottom = rect.top + tooltipHeight;
-        if (tooltipBottom > windowHeight - 20) {
-            yOffset = windowHeight - tooltipBottom - 20;
+        // Adjust vertical position if tooltip goes outside window
+        if (yPos < 20) {
+            yPos = 20;
+        } else if (yPos + tooltipHeight > windowHeight - 20) {
+            yPos = windowHeight - tooltipHeight - 20;
+        }
+        
+        // Determine side for styling (left/right of cursor)
+        let side = 'right';
+        if (cursorX > windowWidth / 2) {
+            side = 'left';
         }
         
         return {
-            x: rect.right,
-            y: rect.top,
+            x: xPos,
+            y: yPos,
             side: side,
-            yOffset: yOffset
+            yOffset: 0
         };
+    };
+
+    // Handle bar chart click to show tooltip
+    const handleBarClick = async (barItem, event) => {
+        const statusType = 'status_pengiriman';
+        const statusValue = barItem.name;
+        
+        // Fetch status detail data
+        await fetchStatusDetail(statusType, statusValue);
+        
+        // Calculate tooltip position
+        const position = calculateTooltipPosition(event);
+        setTooltipPosition(position);
+        
+        // Set hovered status to show tooltip
+        setHoveredStatus({
+            type: statusType,
+            value: statusValue,
+            label: barItem.name,
+            count: barItem.value
+        });
     };
 
     // Fungsi untuk handle add user modal
@@ -1164,10 +1245,10 @@ const WebMonitoringApp = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Details Container - 40% width */}
-                <div className={`${getCardClasses('p-4')} flex-1 lg:flex-none lg:w-2/5 h-96`}>
-                        <h4 className={`text-md font-medium ${getTextClasses('primary')} mb-3`}>Detail Status</h4>
-                    <div className="space-y-2">
+                {/* Details Container - sesuai tooltip 600px */}
+                <div className={`${getCardClasses('p-6')} w-full lg:w-[600px] h-200`}>
+                        <h4 className={`text-lg font-semibold ${getTextClasses('primary')} mb-4`}>Detail Status</h4>
+                    <div className="space-y-3">
                         {currentData.map((item, index) => {
                             const percentage = ((item.count / total) * 100).toFixed(1);
                             const backgroundColor = chartData.datasets[0].backgroundColor[index];
@@ -1176,7 +1257,7 @@ const WebMonitoringApp = ({ user }) => {
                             return (
                                 <div 
                                     key={item.label} 
-                                    className={`relative flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
+                                    className={`relative flex items-center justify-between p-4 rounded-lg transition-colors cursor-pointer ${
                                         isDarkMode 
                                             ? 'bg-gray-700 hover:bg-blue-800' 
                                             : 'bg-gray-50 hover:bg-blue-50'
@@ -1185,25 +1266,27 @@ const WebMonitoringApp = ({ user }) => {
                                         const position = calculateTooltipPosition(e);
                                         setTooltipPosition(position);
                                         setHoveredStatus(`${activeChartType}-${item.label}`);
+                                        setTooltipPage(1); // Reset to page 1 on new hover
                                         fetchStatusDetail(activeChartType, item.label);
                                     }}
                                     onMouseLeave={() => {
                                         setHoveredStatus(null);
                                         setStatusDetailData(null);
+                                        setTooltipPage(1); // Reset page
                                     }}
                                 >
                                     <div className="flex items-center">
                                         <div 
-                                            className="w-4 h-4 rounded mr-3"
+                                            className="w-5 h-5 rounded mr-4 flex-shrink-0"
                                             style={{ backgroundColor }}
                                         ></div>
-                                        <span className={`text-sm font-medium ${getTextClasses('secondary')}`}>{item.label}</span>
+                                        <span className={`text-base font-medium ${getTextClasses('secondary')}`}>{item.label}</span>
                                     </div>
                                     <div className="text-right">
-                                        <div className={`text-sm font-semibold ${getTextClasses('primary')}`}>
+                                        <div className={`text-base font-semibold ${getTextClasses('primary')}`}>
                                             {item.count.toLocaleString()}
                                         </div>
-                                        <div className={`text-xs ${getTextClasses('muted')}`}>
+                                        <div className={`text-sm ${getTextClasses('muted')}`}>
                                             {percentage}%
                                         </div>
                                     </div>
@@ -1211,47 +1294,18 @@ const WebMonitoringApp = ({ user }) => {
                                     {/* Tooltip with detailed breakdown */}
                                     {isHovered && statusDetailData && (
                                         <div 
-                                            className={`fixed z-50 w-80 rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
-                                                tooltipPosition.side === 'left' ? 'transform -translate-x-full' : ''
-                                            } ${
+                                            className={`fixed z-50 w-[600px] rounded-lg shadow-lg p-4 transition-all duration-200 ease-in-out ${
                                                 isDarkMode 
                                                     ? 'bg-gray-800 border-2 border-blue-400 glow-blue' 
                                                     : 'bg-white border border-gray-200'
                                             }`}
                                             style={{
-                                                left: tooltipPosition.side === 'left' 
-                                                    ? `${tooltipPosition.x - 8}px` 
-                                                    : `${tooltipPosition.x + 8}px`,
-                                                top: `${tooltipPosition.y + (tooltipPosition.yOffset || 0)}px`,
-                                                maxHeight: '400px'
+                                                left: `${tooltipPosition.x}px`,
+                                                top: `${tooltipPosition.y}px`,
+                                                maxHeight: '500px'
                                             }}
                                         >
-                                            {/* Arrow indicator */}
-                                            <div 
-                                                className={`absolute top-4 w-0 h-0 ${
-                                                    tooltipPosition.side === 'left' 
-                                                        ? `right-0 transform translate-x-1 border-l-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-l-gray-800' : 'border-l-white'
-                                                        }` 
-                                                        : `left-0 transform -translate-x-1 border-r-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-r-gray-800' : 'border-r-white'
-                                                        }`
-                                                }`}
-                                                style={{ filter: 'drop-shadow(-1px 0 1px rgba(0,0,0,0.1))' }}
-                                            ></div>
-                                            <div 
-                                                className={`absolute top-4 w-0 h-0 ${
-                                                    tooltipPosition.side === 'left' 
-                                                        ? `right-0 transform translate-x-0.5 border-l-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-l-blue-400' : 'border-l-gray-200'
-                                                        }` 
-                                                        : `left-0 transform -translate-x-0.5 border-r-8 border-y-8 border-y-transparent ${
-                                                            isDarkMode ? 'border-r-blue-400' : 'border-r-gray-200'
-                                                        }`
-                                                }`}
-                                            ></div>
-                                            
-                                            <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center justify-between mb-4">
                                                 <h5 className={`font-semibold ${getTextClasses('primary')}`}>
                                                     {item.label}
                                                 </h5>
@@ -1264,30 +1318,83 @@ const WebMonitoringApp = ({ user }) => {
                                                 Breakdown by warehouse:
                                             </div>
                                             
-                                            <div className="max-h-48 overflow-y-auto space-y-1">
+                                            <div className="space-y-3">
                                                 {statusDetailLoading ? (
                                                     <div className={`text-xs ${getTextClasses('muted')}`}>Loading...</div>
-                                                ) : statusDetailData.warehouse_breakdown.slice(0, 10).map((warehouse, idx) => (
-                                                    <div key={warehouse.gudang} className={`flex justify-between items-center text-xs py-1 px-2 rounded ${
-                                                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
-                                                    }`}>
-                                                        <span className={`${getTextClasses('secondary')} truncate`} title={warehouse.gudang}>
-                                                            {warehouse.gudang}
-                                                        </span>
-                                                        <div className="flex items-center ml-2">
-                                                            <span className={`font-medium ${getTextClasses('primary')}`}>
-                                                                {warehouse.count.toLocaleString()}
-                                                            </span>
-                                                            <span className={`${getTextClasses('muted')} ml-1`}>
-                                                                {warehouse.description}
-                                                            </span>
+                                                ) : (
+                                                    <>
+                                                        <div className="max-h-64 overflow-y-auto space-y-2">
+                                                            {statusDetailData.warehouse_breakdown
+                                                                .slice((tooltipPage - 1) * tooltipPerPage, tooltipPage * tooltipPerPage)
+                                                                .map((warehouse, idx) => (
+                                                                    <div key={warehouse.gudang} className={`flex justify-between items-center text-sm py-3 px-4 rounded ${
+                                                                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                                                                    }`}>
+                                                                        <span className={`${getTextClasses('secondary')} truncate`} title={warehouse.gudang}>
+                                                                            {warehouse.gudang}
+                                                                        </span>
+                                                                        <div className="flex items-center ml-3">
+                                                                            <span className={`font-medium text-sm ${getTextClasses('primary')}`}>
+                                                                                {warehouse.count.toLocaleString()}
+                                                                            </span>
+                                                                            <span className={`${getTextClasses('muted')} ml-2 text-sm`}>
+                                                                                {warehouse.description}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
                                                         </div>
-                                                    </div>
-                                                ))}
-                                                {statusDetailData.warehouse_breakdown.length > 10 && (
-                                                    <div className={`text-xs ${getTextClasses('muted')} text-center py-1`}>
-                                                        ... dan {statusDetailData.warehouse_breakdown.length - 10} gudang lainnya
-                                                    </div>
+                                                        
+                                                        {/* Pagination controls */}
+                                                        {statusDetailData.warehouse_breakdown.length > tooltipPerPage && (
+                                                            <div className={`flex items-center justify-between pt-3 border-t ${
+                                                                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                                                            }`}>
+                                                                <div className={`text-xs ${getTextClasses('muted')}`}>
+                                                                    Showing {((tooltipPage - 1) * tooltipPerPage) + 1} - {Math.min(tooltipPage * tooltipPerPage, statusDetailData.warehouse_breakdown.length)} of {statusDetailData.warehouse_breakdown.length}
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setTooltipPage(prev => Math.max(1, prev - 1));
+                                                                        }}
+                                                                        disabled={tooltipPage === 1}
+                                                                        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                                                            tooltipPage === 1
+                                                                                ? isDarkMode 
+                                                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                                : isDarkMode
+                                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                                        }`}
+                                                                    >
+                                                                        ← Prev
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setTooltipPage(prev => Math.min(Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage), prev + 1));
+                                                                        }}
+                                                                        disabled={tooltipPage >= Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage)}
+                                                                        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                                                            tooltipPage >= Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage)
+                                                                                ? isDarkMode 
+                                                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                                : isDarkMode
+                                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                                        }`}
+                                                                    >
+                                                                        Next →
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
@@ -1530,8 +1637,9 @@ const WebMonitoringApp = ({ user }) => {
                                 <div className={`${getCardClasses('p-6')}`}>
                                     <BarChart 
                                         data={transactionStatusData} 
-                                        title="� Status Transaksi"
+                                        title="Status Transaksi"
                                         compact={false}
+                                        onBarClick={handleBarClick}
                                     />
                                 </div>
                             </div>
@@ -2104,6 +2212,12 @@ const WebMonitoringApp = ({ user }) => {
                                 selectedGudang={selectedGudang} 
                                 title="📊 Distribusi Stock Barang"
                                 isDarkMode={isDarkMode}
+                                filterItemId={filterItemId}
+                                filterPartNumber={filterPartNumber}
+                                filterNamaBarang={filterNamaBarang}
+                                siteFilter={filterSite}
+                                userRole="superadmin"
+                                userLocId={null}
                             />
                         </div>
                     </div>
@@ -4015,6 +4129,146 @@ const WebMonitoringApp = ({ user }) => {
                 onClose={() => setShowSuccessModal(false)}
                 isDarkMode={isDarkMode}
             />
+
+            {/* Global Tooltip for Bar Chart */}
+            {hoveredStatus && typeof hoveredStatus === 'object' && statusDetailData && (
+                <>
+                    {/* Backdrop to close tooltip on outside click */}
+                    <div 
+                        className="fixed inset-0 z-40"
+                        onClick={() => {
+                            setHoveredStatus(null);
+                            setStatusDetailData(null);
+                            setTooltipPage(1);
+                        }}
+                    />
+                    
+                    {/* Tooltip */}
+                    <div 
+                        className={`fixed z-50 w-[600px] rounded-lg shadow-xl p-4 transition-all duration-200 ease-in-out ${
+                            isDarkMode 
+                                ? 'bg-gray-800 border-2 border-blue-400 glow-blue' 
+                                : 'bg-white border-2 border-gray-300'
+                        }`}
+                        style={{
+                            left: `${tooltipPosition.x}px`,
+                            top: `${tooltipPosition.y}px`,
+                            maxHeight: '500px'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h5 className={`font-semibold text-lg ${getTextClasses('primary')}`}>
+                                {hoveredStatus.label}
+                            </h5>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-sm ${getTextClasses('muted')}`}>
+                                    {statusDetailData.total_count.toLocaleString()} total
+                                </span>
+                                <button
+                                    onClick={() => {
+                                        setHoveredStatus(null);
+                                        setStatusDetailData(null);
+                                        setTooltipPage(1);
+                                    }}
+                                    className={`text-xl hover:opacity-70 ${getTextClasses('muted')}`}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className={`text-xs ${getTextClasses('secondary')} mb-2`}>
+                            Breakdown by warehouse:
+                        </div>
+                        
+                        <div className="max-h-[350px] overflow-y-auto">
+                            {statusDetailLoading ? (
+                                <div className={`text-center py-4 ${getTextClasses('muted')}`}>
+                                    Loading...
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-2 mb-3">
+                                        {statusDetailData.warehouse_breakdown
+                                            .slice((tooltipPage - 1) * tooltipPerPage, tooltipPage * tooltipPerPage)
+                                            .map((wh, idx) => (
+                                            <div 
+                                                key={idx}
+                                                className={`p-3 rounded-md ${
+                                                    isDarkMode 
+                                                        ? 'bg-gray-700/50 hover:bg-gray-700' 
+                                                        : 'bg-gray-50 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className={`font-medium ${getTextClasses('primary')}`}>
+                                                        {wh.gudang}
+                                                    </span>
+                                                    <span className={`text-sm font-semibold ${getTextClasses('primary')}`}>
+                                                        {wh.count.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                {wh.description && (
+                                                    <div className={`text-xs ${getTextClasses('muted')}`}>
+                                                        {wh.description}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {statusDetailData.warehouse_breakdown.length > tooltipPerPage && (
+                                        <div className={`border-t pt-3 mt-2 ${
+                                            isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                                        }`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className={`text-xs ${getTextClasses('muted')}`}>
+                                                    Showing {((tooltipPage - 1) * tooltipPerPage) + 1} - {Math.min(tooltipPage * tooltipPerPage, statusDetailData.warehouse_breakdown.length)} of {statusDetailData.warehouse_breakdown.length}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => setTooltipPage(prev => Math.max(1, prev - 1))}
+                                                        disabled={tooltipPage === 1}
+                                                        className={`px-3 py-1 rounded text-xs transition-colors ${
+                                                            tooltipPage === 1
+                                                                ? isDarkMode 
+                                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                : isDarkMode
+                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                        }`}
+                                                    >
+                                                        ← Prev
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setTooltipPage(prev => Math.min(Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage), prev + 1));
+                                                        }}
+                                                        disabled={tooltipPage >= Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage)}
+                                                        className={`px-3 py-1 rounded text-xs transition-colors ${
+                                                            tooltipPage >= Math.ceil(statusDetailData.warehouse_breakdown.length / tooltipPerPage)
+                                                                ? isDarkMode 
+                                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                                : isDarkMode
+                                                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                        }`}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

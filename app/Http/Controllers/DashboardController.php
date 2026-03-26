@@ -121,7 +121,6 @@ class DashboardController extends Controller
         $username = $request->input('username');
         $password = $request->input('password');
 
-        // Use the Eloquent User model so we can authenticate via the Auth facade
         $userModel = User::where('username', $username)->first();
 
         if ($userModel && Hash::check($password, $userModel->password)) {
@@ -181,33 +180,7 @@ class DashboardController extends Controller
         }
     }
 
-    public function getDataset2(Request $request)
-    {
-        try {
-            $page = $request->get('page', 1);
-            $perPage = 15;
-            
-            $items = DB::table('dataset2')
-                ->skip(($page - 1) * $perPage)
-                ->take($perPage)
-                ->get();
-                
-            $total = DB::table('dataset2')->count();
-            $lastPage = ceil($total / $perPage);
-
-            return response()->json([
-                'data' => $items,
-                'current_page' => $page,
-                'last_page' => $lastPage,
-                'total' => $total
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Error fetching dataset2',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
+   
 
     public function getGudang(Request $request)
     {
@@ -307,7 +280,8 @@ class DashboardController extends Controller
             // Hitung total dengan filter yang sama - HARUS JOIN item juga untuk konsistensi
             $totalQuery = DB::table('inventory')
                 ->join('item', 'inventory.itemnum', '=', 'item.itemnum')
-                ->join('location', 'inventory.idlocation', '=', 'location.id');
+                ->join('location', 'inventory.idlocation', '=', 'location.id')
+                ->join('site', 'location.idsite', '=', 'site.id'); // Join site untuk filter site
             
             // Apply same location/site filtering for count
             if ($userRole === 'user' && $userLocId) {
@@ -333,6 +307,16 @@ class DashboardController extends Controller
             
             if ($filterPartNumber) {
                 $totalQuery->where('item.pn', 'LIKE', '%' . $filterPartNumber . '%');
+            }
+            
+            // Apply nama barang filter for count
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $totalQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            // Apply site filter for count
+            if ($filterSite && $filterSite !== 'all') {
+                $totalQuery->where('site.siteid', $filterSite);
             }
             
             $total = $totalQuery->count();
@@ -946,8 +930,9 @@ class DashboardController extends Controller
                 ->take($perPage)
                 ->get();
             
-            // Hitung total dengan filter yang sama
+            // Hitung total dengan filter yang sama - HARUS JOIN item untuk filter part number dan nama barang
             $totalQuery = DB::table('invuse')
+                ->leftJoin('item', 'invuse.itemnum', '=', 'item.itemnum') // JOIN item untuk filter part number dan nama barang
                 ->leftJoin('site', 'invuse.idsite', '=', 'site.id')
                 ->leftJoin('location as loc_from', 'invuse.fromstoreloc', '=', 'loc_from.id')
                 ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id');
@@ -1002,6 +987,16 @@ class DashboardController extends Controller
             
             if ($filterNoReg) {
                 $totalQuery->where('invuse.no_reg_sista', 'LIKE', '%' . $filterNoReg . '%');
+            }
+            
+            // Apply nama barang filter for count
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $totalQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            // Apply site filter for count
+            if ($filterSite && $filterSite !== 'all') {
+                $totalQuery->where('site.siteid', $filterSite);
             }
             
             $total = $totalQuery->count();
@@ -1077,8 +1072,18 @@ class DashboardController extends Controller
             $userLocId = $request->get('user_locid'); // Location ID for User role
             $userRole = $request->get('user_role', 'superadmin');
             
+            // Additional filters from transaksi table
+            $filterFrom = $request->get('filter_from', 'all');
+            $filterTo = $request->get('filter_to', 'all');
+            $filterNoDok = $request->get('filter_nodok');
+            $filterPartNumber = $request->get('filter_partnumber');
+            $filterNoReg = $request->get('filter_noreg');
+            $filterNamaBarang = $request->get('filter_namabarang');
+            $filterSite = $request->get('filter_site');
+            
             // Build base query using invuse table with joins
             $baseQuery = DB::table('invuse')
+                ->leftJoin('item', 'invuse.itemnum', '=', 'item.itemnum')
                 ->leftJoin('site', 'invuse.idsite', '=', 'site.id')
                 ->leftJoin('location as loc_from', 'invuse.fromstoreloc', '=', 'loc_from.id')
                 ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id');
@@ -1101,6 +1106,37 @@ class DashboardController extends Controller
                     $q->where('loc_from.location', 'LIKE', '%' . $filter . '%')
                       ->orWhere('loc_to.location', 'LIKE', '%' . $filter . '%');
                 });
+            }
+            
+            // Apply additional filters
+            if ($filterNoDok) {
+                // Use nomerdokumen (document number) like getTransaksi()
+                $baseQuery->where('invuse.nomerdokumen', 'LIKE', '%' . $filterNoDok . '%');
+            }
+
+            if ($filterPartNumber) {
+                // Part number column is `pn` in `item` table (used by getTransaksi)
+                $baseQuery->where('item.pn', 'LIKE', '%' . $filterPartNumber . '%');
+            }
+            
+            if ($filterNoReg) {
+                $baseQuery->where('invuse.no_reg_sista', 'LIKE', '%' . $filterNoReg . '%');
+            }
+            
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $baseQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            if ($filterFrom && $filterFrom !== 'all') {
+                $baseQuery->where('loc_from.location', $filterFrom);
+            }
+            
+            if ($filterTo && $filterTo !== 'all') {
+                $baseQuery->where('loc_to.location', $filterTo);
+            }
+            
+            if ($filterSite && $filterSite !== 'all') {
+                $baseQuery->where('site.siteid', $filterSite);
             }
 
             // Get statistics for each status type
@@ -1161,6 +1197,16 @@ class DashboardController extends Controller
             $statusType = $request->get('status_type'); // 'status_permintaan', 'status_penerimaan', 'status_pengiriman'
             $statusValue = $request->get('status_value'); // e.g., 'sedang di proses'
             
+            // Get additional filters
+            $filterNoDok = $request->get('filter_nodok', '');
+            $filterPartNumber = $request->get('filter_partnumber', '');
+            $filterNoReg = $request->get('filter_noreg', '');
+            $filterNamaBarang = $request->get('filter_namabarang', 'all');
+            $filterSite = $request->get('filter_site', 'all');
+            $siteFilter = $request->get('site_filter', '');
+            $userRole = $request->get('user_role', '');
+            $userLocid = $request->get('user_locid', '');
+            
             if (!$statusType || !$statusValue) {
                 return response()->json([
                     'error' => 'Missing required parameters: status_type and status_value'
@@ -1184,13 +1230,49 @@ class DashboardController extends Controller
             // Build base query using invuse table with joins
             $baseQuery = DB::table('invuse')
                 ->leftJoin('location as loc_from', 'invuse.fromstoreloc', '=', 'loc_from.id')
-                ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id');
+                ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id')
+                ->leftJoin('item', 'invuse.itemnum', '=', 'item.itemnum')
+                ->leftJoin('site', 'invuse.idsite', '=', 'site.id');
             
             // Apply location filter if not 'all'
             if ($filter && $filter !== 'all') {
                 $baseQuery->where(function($q) use ($filter) {
                     $q->where('loc_from.location', 'LIKE', '%' . $filter . '%')
                       ->orWhere('loc_to.location', 'LIKE', '%' . $filter . '%');
+                });
+            }
+
+            // Apply additional filters
+            if (!empty($filterNoDok)) {
+                $baseQuery->where('invuse.nomerdokumen', 'LIKE', '%' . $filterNoDok . '%');
+            }
+            
+            if (!empty($filterPartNumber)) {
+                $baseQuery->where('item.pn', 'LIKE', '%' . $filterPartNumber . '%');
+            }
+            
+            if (!empty($filterNoReg)) {
+                $baseQuery->where('invuse.no_reg_sista', 'LIKE', '%' . $filterNoReg . '%');
+            }
+            
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $baseQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            if ($filterSite && $filterSite !== 'all') {
+                $baseQuery->where('site.siteid', $filterSite);
+            }
+            
+            // Apply site filter for admin role
+            if ($userRole === 'admin' && !empty($siteFilter)) {
+                $baseQuery->where('site.siteid', $siteFilter);
+            }
+            
+            // Apply user location filter for user role
+            if ($userRole === 'user' && !empty($userLocid)) {
+                $baseQuery->where(function($q) use ($userLocid) {
+                    $q->where('invuse.fromstoreloc', $userLocid)
+                      ->orWhere('invuse.tostoreloc', $userLocid);
                 });
             }
 
@@ -1283,8 +1365,18 @@ class DashboardController extends Controller
             $userLocId = $request->get('user_locid'); // Location ID for User role
             $userRole = $request->get('user_role', 'superadmin');
             
+            // Additional filters from transaksi table
+            $filterFrom = $request->get('filter_from', 'all');
+            $filterTo = $request->get('filter_to', 'all');
+            $filterNoDok = $request->get('filter_nodok');
+            $filterPartNumber = $request->get('filter_partnumber');
+            $filterNoReg = $request->get('filter_noreg');
+            $filterNamaBarang = $request->get('filter_namabarang');
+            $filterSite = $request->get('filter_site');
+            
             // Build base query using invuse table with joins
             $baseQuery = DB::table('invuse')
+                ->leftJoin('item', 'invuse.itemnum', '=', 'item.itemnum')
                 ->leftJoin('site', 'invuse.idsite', '=', 'site.id')
                 ->leftJoin('location as loc_from', 'invuse.fromstoreloc', '=', 'loc_from.id')
                 ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id');
@@ -1307,6 +1399,35 @@ class DashboardController extends Controller
                     $q->where('loc_from.location', 'LIKE', '%' . $filter . '%')
                       ->orWhere('loc_to.location', 'LIKE', '%' . $filter . '%');
                 });
+            }
+            
+            // Apply additional filters
+            if ($filterNoDok) {
+                $baseQuery->where('invuse.nomerdokumen', 'LIKE', '%' . $filterNoDok . '%');
+            }
+            
+            if ($filterPartNumber) {
+                $baseQuery->where('item.pn', 'LIKE', '%' . $filterPartNumber . '%');
+            }
+            
+            if ($filterNoReg) {
+                $baseQuery->where('invuse.no_reg_sista', 'LIKE', '%' . $filterNoReg . '%');
+            }
+            
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $baseQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            if ($filterFrom && $filterFrom !== 'all') {
+                $baseQuery->where('loc_from.location', $filterFrom);
+            }
+            
+            if ($filterTo && $filterTo !== 'all') {
+                $baseQuery->where('loc_to.location', $filterTo);
+            }
+            
+            if ($filterSite && $filterSite !== 'all') {
+                $baseQuery->where('site.siteid', $filterSite);
             }
 
             // Get top active warehouses as "dari_gudang" (outgoing)
@@ -1400,38 +1521,87 @@ class DashboardController extends Controller
             $siteFilter = $request->get('site_filter');
             $filter = $request->get('filter', 'all');
             $userRole = $request->get('user_role', 'superadmin');
+            $userLocId = $request->get('user_locid');
             
-            // Base query for transaksi with site filtering
-            $baseQuery = Transaksi1::query();
+            // Additional filters from transaksi table
+            $filterFrom = $request->get('filter_from', 'all');
+            $filterTo = $request->get('filter_to', 'all');
+            $filterNoDok = $request->get('filter_nodok');
+            $filterPartNumber = $request->get('filter_partnumber');
+            $filterNoReg = $request->get('filter_noreg');
+            $filterNamaBarang = $request->get('filter_namabarang');
+            $filterSite = $request->get('filter_site');
             
-            // Apply site filtering for admin and user roles
-            if ($userRole === 'admin' || $userRole === 'user') {
-                if ($siteFilter) {
-                    $baseQuery->where('siteid', $siteFilter);
-                }
+            // Build base query using invuse table with joins
+            $baseQuery = DB::table('invuse')
+                ->leftJoin('item', 'invuse.itemnum', '=', 'item.itemnum')
+                ->leftJoin('site', 'invuse.idsite', '=', 'site.id')
+                ->leftJoin('location as loc_from', 'invuse.fromstoreloc', '=', 'loc_from.id')
+                ->leftJoin('location as loc_to', 'invuse.tostoreloc', '=', 'loc_to.id');
+            
+            // Apply site/location filtering based on role
+            if ($userRole === 'admin' && $siteFilter) {
+                $baseQuery->where('site.siteid', $siteFilter);
+            } elseif ($userRole === 'user' && $userLocId) {
+                $baseQuery->where(function($q) use ($userLocId) {
+                    $q->where('invuse.tostoreloc', $userLocId)
+                      ->orWhere('invuse.fromstoreloc', $userLocId);
+                });
             }
             
-            // Apply gudang filter if specified
-            if ($filter !== 'all') {
-                $baseQuery->where(function ($query) use ($filter) {
-                    $query->where('dari_gudang', $filter)
-                          ->orWhere('ke_gudang', $filter);
+            // Apply location filter if not 'all'
+            if ($filter && $filter !== 'all') {
+                $baseQuery->where(function($q) use ($filter) {
+                    $q->where('loc_from.location', 'LIKE', '%' . $filter . '%')
+                      ->orWhere('loc_to.location', 'LIKE', '%' . $filter . '%');
                 });
+            }
+            
+            // Apply additional filters
+            if ($filterNoDok) {
+                // document number column (nomerdokumen)
+                $baseQuery->where('invuse.nomerdokumen', 'LIKE', '%' . $filterNoDok . '%');
+            }
+
+            if ($filterPartNumber) {
+                // part number is stored in item.pn
+                $baseQuery->where('item.pn', 'LIKE', '%' . $filterPartNumber . '%');
+            }
+
+            if ($filterNoReg) {
+                // registration number column
+                $baseQuery->where('invuse.no_reg_sista', 'LIKE', '%' . $filterNoReg . '%');
+            }
+            
+            if ($filterNamaBarang && $filterNamaBarang !== 'all') {
+                $baseQuery->where('item.description', $filterNamaBarang);
+            }
+            
+            if ($filterFrom && $filterFrom !== 'all') {
+                $baseQuery->where('loc_from.location', $filterFrom);
+            }
+            
+            if ($filterTo && $filterTo !== 'all') {
+                $baseQuery->where('loc_to.location', $filterTo);
+            }
+            
+            if ($filterSite && $filterSite !== 'all') {
+                $baseQuery->where('site.siteid', $filterSite);
             }
             
             // Get warehouse activity statistics
             $fromWarehouseStats = (clone $baseQuery)
-                ->select('dari_gudang as warehouse', DB::raw('COUNT(*) as count'))
-                ->whereNotNull('dari_gudang')
-                ->where('dari_gudang', '!=', '')
-                ->groupBy('dari_gudang')
+                ->select('loc_from.location as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('loc_from.location')
+                ->where('loc_from.location', '!=', '')
+                ->groupBy('loc_from.location')
                 ->get();
                 
             $toWarehouseStats = (clone $baseQuery)
-                ->select('ke_gudang as warehouse', DB::raw('COUNT(*) as count'))
-                ->whereNotNull('ke_gudang')
-                ->where('ke_gudang', '!=', '')
-                ->groupBy('ke_gudang')
+                ->select('loc_to.location as warehouse', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('loc_to.location')
+                ->where('loc_to.location', '!=', '')
+                ->groupBy('loc_to.location')
                 ->get();
             
             // Combine and aggregate warehouse statistics

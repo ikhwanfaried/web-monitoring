@@ -43,6 +43,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{id}', [DashboardController::class, 'deleteUser']);
         Route::post('/users/{id}/update-status', [DashboardController::class, 'updateUserStatus']);
     });
+    
+    // Fallback route untuk authenticated users - handle React routing
+    Route::fallback(function () {
+        return view('app');
+    });
 });
 
 // Test route (bisa diakses tanpa login untuk debugging)
@@ -54,9 +59,3 @@ Route::get('/test-sqlsrv', function(){
         return 'Connection failed: ' . $e->getMessage();
     }
 });
-
-// Fallback route
-Route::fallback(function () {
-    return view('app');
-});
-
